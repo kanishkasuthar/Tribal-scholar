@@ -1,0 +1,422 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String          @id @default(uuid())
+  email           String          @unique
+  emailVerified   Boolean         @default(true)
+  emailVerifiedAt DateTime?       @default(now())
+  password        String
+  name            String
+  role            String          @default("STUDENT") // STUDENT, INSTITUTE, ADMIN
+  mobile          String?
+  avatarUrl       String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  studentProfile      StudentProfile?
+  applications        Application[]
+  documents           Document[]
+  notifications       Notification[]
+  grievances          Grievance[]
+  renewals            Renewal[]
+  scholarshipRenewals ScholarshipRenewal[]
+  studentProgress     StudentProgress[]
+  researchInterests   ResearchInterest[]
+  tasks               ApplicationTask[]
+  auditLogs           AuditLog[]
+  userPreference      UserPreference?
+}
+
+model EmailVerification {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  otpHash       String
+  otpExpiresAt  DateTime
+  otpAttempts   Int      @default(0)
+  otpLastSentAt DateTime @default(now())
+  name          String
+  passwordHash  String
+  createdAt     DateTime @default(now())
+}
+
+model StudentProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  stCategory         String?
+  subTribe           String?
+  state              String?
+  district           String?
+  pincode            String?
+  familyIncome       Float?
+  fatherName         String?
+  gender             String?
+  dob                String?
+  
+  educationLevel     String?  // SCHOOL, DIPLOMA, UNDERGRADUATE, POSTGRADUATE, RESEARCH, PROFESSIONAL
+  degreeLevel        String?  // Diploma, Undergraduate, Postgraduate, Doctorate
+  courseName         String?
+  institutionName    String?
+  institutionCode    String?
+  schoolName         String?
+  classGrade         String?
+  boardName          String?
+  currentYear        Int?
+  semester           Int?
+  academicMarks      Float?   // CGPA or percentage
+  
+  bankAccount        String?
+  bankIfsc           String?
+  bankName           String?
+  aadharLinked       Boolean  @default(false)
+  
+  researchArea       String?
+  researchInterest   String?
+  careerInterest     String?
+  scholarshipHistory String?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Institute {
+  id               String   @id @default(uuid())
+  code             String   @unique
+  name             String
+  state            String
+  district         String
+  nodalOfficerName String
+  nodalOfficerEmail String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Scholarship {
+  id                      String   @id @default(uuid())
+  code                    String   @unique
+  title                   String
+  officialName            String?
+  type                    String   @default("SCHOLARSHIP") // SCHOLARSHIP or FELLOWSHIP
+  schemeType              String   @default("SCHOLARSHIP")
+  provider                String   @default("Ministry of Tribal Affairs")
+  ministry                String   @default("Ministry of Tribal Affairs")
+  department              String   @default("Education Division")
+  category                String   @default("Scheduled Tribes")
+  educationLevel          String   @default("UNDERGRADUATE") // SCHOOL, DIPLOMA, UNDERGRADUATE, POSTGRADUATE, RESEARCH, PROFESSIONAL
+  degreeLevel             String   @default("Undergraduate")
+  academicYear            String   @default("2026-27")
+  maxIncome               Float    @default(250000)
+  incomeLimit             String   @default("₹2,50,000 / annum")
+  minMarksPercentage      Float    @default(60.0)
+  eligibility             String   @default("Scheduled Tribe students meeting merit and income cutoffs.")
+  benefitAmount           String   @default("₹1,20,000 / year + Tuition Fee")
+  benefits                String   @default("Full tuition waiver, maintenance allowance, and living grant.")
+  deadline                String   @default("2026-10-31")
+  applicationStart        String?  @default("2026-08-01")
+  applicationDeadline     String   @default("2026-10-31")
+  renewalInformation      String?  @default("Annual performance verification required for scheme renewal.")
+  description             String
+  requiredDocs            String   // Comma separated doc names
+  requiredDocuments       String?  @default("ST Certificate, Income Certificate, Academic Marksheet, Aadhaar")
+  status                  String   @default("ACTIVE")
+  officialApplicationUrl  String   @default("https://scholarships.gov.in")
+  officialGuidelineUrl     String   @default("https://tribal.nic.in/Schemes.aspx")
+  sourceUrl               String   @default("https://tribal.nic.in")
+  sourceType              String   @default("OFFICIAL_MOTA") // OFFICIAL_MOTA, OFFICIAL_NSP, OFFICIAL_GOVERNMENT_NOTIFICATION
+  lastVerifiedAt          String   @default("2026-09-27")
+  isDemoRecord            Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  applications            Application[]
+  renewals                ScholarshipRenewal[]
+}
+
+model Fellowship {
+  id                  String   @id @default(uuid())
+  code                String   @unique
+  title               String
+  field               String   @default("STEM & Social Sciences")
+  degreeLevel         String   @default("Doctorate / M.Phil")
+  monthlyStipend      String   @default("₹31,000 / month + HRA")
+  contingencyAmount   String   @default("₹25,000 / annum")
+  durationMonths      Int      @default(36)
+  description         String
+  eligibilityCriteria String
+  status              String   @default("ACTIVE")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  applications        Application[]
+}
+
+model Document {
+  id               String         @id @default(uuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationId    String?
+  docType          String         // ST Certificate, Income Certificate, Marks Card, Bonafide Certificate, Bank Passbook, College ID, Research Proposal
+  fileName         String
+  fileUrl          String
+  fileSize         Int            @default(240000)
+  mimeType         String         @default("application/pdf")
+  status           String         @default("VERIFIED") // VERIFIED, NEEDS_ATTENTION, INVALID, ANALYZING, NOT_UPLOADED
+  issueType        String?
+  issueDescription String?
+  aiChecksJson     String?        // JSON of automated checks
+  uploadedAt       DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  versions         DocumentVersion[]
+  checks           DocumentCheck[]
+  extractedFields  ExtractedDocumentField[]
+  deficiencies     DocumentDeficiency[]
+}
+
+model DocumentVersion {
+  id          String   @id @default(uuid())
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  versionNum  Int      @default(1)
+  fileName    String
+  fileUrl     String
+  fileSize    Int
+  mimeType    String   @default("application/pdf")
+  uploadedAt  DateTime @default(now())
+}
+
+model DocumentCheck {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  checkType  String   // READABILITY, COMPLETENESS, EXPIRY, CONSISTENCY, REQUIRED_DOCS
+  status     String   // PASSED, WARNING, FAILED
+  confidence Float    @default(0.95)
+  message    String
+  createdAt  DateTime @default(now())
+}
+
+model ExtractedDocumentField {
+  id             String   @id @default(uuid())
+  documentId     String
+  document       Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  fieldName      String   // applicantName, incomeAmount, certificateNo, issueDate, issuingAuthority
+  extractedValue String
+  confidence     Float    @default(0.92)
+  createdAt      DateTime @default(now())
+}
+
+model DocumentDeficiency {
+  id                 String   @id @default(uuid())
+  documentId         String
+  document           Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  type               String   // NAME_MISMATCH, LOW_READABILITY, MISSING_INFO, EXPIRED_VALIDITY, UNVERIFIED_SEAL
+  severity           String   @default("WARNING") // WARNING, CRITICAL
+  description        String
+  resolutionGuidance String
+  status             String   @default("OPEN") // OPEN, RECHECKING, RESOLVED
+
+  resolutions        DeficiencyResolution[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model DeficiencyResolution {
+  id                   String             @id @default(uuid())
+  deficiencyId         String
+  deficiency           DocumentDeficiency @relation(fields: [deficiencyId], references: [id], onDelete: Cascade)
+  previousDocumentId   String?
+  correctedDocumentId String?
+  resolutionStatus     String             @default("RESOLVED") // RESOLVED, REJECTED, PENDING
+  actionTaken          String             @default("Corrected document uploaded and verified by AI engine")
+  resolvedAt           DateTime           @default(now())
+}
+
+model Application {
+  id               String           @id @default(uuid())
+  applicationIdStr String           @unique // e.g. TSA-2026-000124
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scholarshipId    String?
+  scholarship      Scholarship?     @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  fellowshipId     String?
+  fellowship       Fellowship?      @relation(fields: [fellowshipId], references: [id], onDelete: Cascade)
+  stage            String           @default("DRAFT") // DRAFT, SUBMITTED, DOCUMENT_REVIEW, INSTITUTE_VERIFICATION, DEPARTMENT_VERIFICATION, APPROVED, DISBURSEMENT, COMPLETED, RETURNED_FOR_CORRECTION
+  overallStatus    String           @default("Draft")
+  submittedAt      DateTime?
+  lastUpdatedAt    DateTime         @updatedAt
+  currentAuthority String           @default("Student / Applicant")
+  totalAmount      String           @default("₹1,20,000")
+  remarks          String?
+  isDemoApplication Boolean          @default(true) // Illustrative Demo Application — SIH 2026 Prototype
+
+  history          ApplicationStatusHistory[]
+  tasks            ApplicationTask[]
+  renewals         ScholarshipRenewal[]
+}
+
+model ApplicationStatusHistory {
+  id            String           @id @default(uuid())
+  applicationId String
+  application   Application      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stage         String           // DRAFT, SUBMITTED, DOCUMENT_REVIEW, INSTITUTE_VERIFICATION, DEPARTMENT_VERIFICATION, APPROVED, DISBURSEMENT, COMPLETED, RETURNED_FOR_CORRECTION
+  status        String
+  updatedBy     String           @default("System AI")
+  actorRole     String           @default("STUDENT") // STUDENT, INSTITUTE, DEPARTMENT, SYSTEM, MINISTRY
+  comments      String?
+  createdAt     DateTime         @default(now())
+}
+
+model ApplicationTask {
+  id            String       @id @default(uuid())
+  applicationId String?
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  description   String
+  category      String       @default("URGENT") // URGENT, ACTION_REQUIRED, WAITING, UPCOMING
+  deadline      String
+  isCompleted   Boolean      @default(false)
+  linkUrl       String?
+  createdAt     DateTime     @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   @default("application") // deadline, document, application, verification, renewal, fellowship, grievance
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Renewal {
+  id                   String   @id @default(uuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentScholarshipId String
+  readinessScore       Int      @default(72)
+  missingRequirements  String   // JSON or comma separated string
+  deadline             String
+  status               String   @default("NEEDS_ACTION")
+  createdAt            DateTime @default(now())
+}
+
+model ScholarshipRenewal {
+  id                    String              @id @default(uuid())
+  scholarshipId         String
+  scholarship           Scholarship         @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  previousApplicationId String?
+  previousApplication   Application?        @relation(fields: [previousApplicationId], references: [id])
+  userId                String
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status                String              @default("RENEWAL_OPEN") // RENEWAL_NOT_OPEN, RENEWAL_OPEN, PREPARATION, SUBMITTED, VERIFICATION, APPROVED, DISBURSEMENT, RENEWED
+  renewalDeadline       String              @default("2026-10-18")
+  readinessPercentage   Int                 @default(78)
+  submittedAt           DateTime?
+  approvedAt            DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  requirements          RenewalRequirement[]
+}
+
+model RenewalRequirement {
+  id              String             @id @default(uuid())
+  renewalId       String
+  renewal         ScholarshipRenewal @relation(fields: [renewalId], references: [id], onDelete: Cascade)
+  requirementType String             // ACADEMIC, DOCUMENT, APPLICATION, DEADLINE, CONDITION
+  title           String
+  description     String
+  status          String             @default("PENDING") // PASSED, WARNING, PENDING, FAILED
+  required        Boolean            @default(true)
+  dueDate         String?
+  actionText      String?
+  createdAt       DateTime           @default(now())
+}
+
+model StudentProgress {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  academicYear       String   @default("2025-26")
+  semester           Int      @default(5)
+  cgpaOrPercentage   Float    @default(8.6)
+  previousCgpa       Float    @default(8.4)
+  completedSemesters Int      @default(4)
+  achievementsJson   String   @default("[\"Dean’s Merit List 2025\", \"Smart India Hackathon Winner 2025\"]")
+  updatedAt          DateTime @updatedAt
+}
+
+model ResearchInterest {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain        String   @default("Computer Science & AI")
+  interest      String   @default("Artificial Intelligence for Tribal Language Preservation & Land Records")
+  keywordsJson  String   @default("[\"AI\", \"NLP\", \"Indigenous Knowledge\", \"Tribal Governance\"]")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Grievance {
+  id               String          @id @default(uuid())
+  ticketId         String          @unique // e.g. GRV-2026-4412
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category         String          @default("Document Verification Delay")
+  subject          String
+  description      String
+  currentAuthority String          @default("Ministry Helpline Nodal Officer")
+  status           String          @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  commentsJson     String          @default("[]")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model AIRecommendation {
+  id               String   @id @default(uuid())
+  userId           String
+  opportunityId    String
+  matchScore       Int      @default(90)
+  matchReasonsJson String
+  actionNeededJson String
+  createdAt        DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String
+  performedBy String
+  userRole    String
+  details     String
+  ipAddress   String?  @default("127.0.0.1")
+  timestamp   DateTime @default(now())
+}
+
+model UserPreference {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredLanguage String   @default("en") // en, hi, kn, ta, te, mr, bn
+  voiceEnabled      Boolean  @default(true)
+  ttsEnabled        Boolean  @default(true)
+  fontSize          String   @default("normal") // normal, large, extra-large
+  highContrast      Boolean  @default(false)
+  simpleLanguage    Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

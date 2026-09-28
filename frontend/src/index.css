@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-maroon: #7A1F2B;
+  --brand-dark: #5B1720;
+  --terracotta: #B65A3C;
+  --gold: #C49A44;
+  --ivory: #F7F1E6;
+  --cream: #FCFAF5;
+  --white: #FFFFFF;
+  --charcoal: #292522;
+  --muted-text: #6B6259;
+  --forest: #174F43;
+  --border: #DDD3C5;
+}
+
+@layer base {
+  body {
+    background-color: var(--ivory);
+    color: var(--charcoal);
+    font-family: 'Inter', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: 'DM Serif Display', 'Noto Serif Devanagari', Georgia, serif;
+    color: var(--charcoal);
+  }
+}
+
+/* Header Separator Line */
+.header-gold-stripe {
+  background: #C49A44;
+  height: 1px;
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F7F1E6;
+}
+::-webkit-scrollbar-thumb {
+  background: #7A1F2B;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #5B1720;
+}
+
+/* Accessibility Font Size Classes */
+html.font-size-large {
+  font-size: 112.5%;
+}
+
+html.font-size-xlarge {
+  font-size: 125%;
+}
+
+/* High Contrast Mode */
+html.high-contrast {
+  filter: contrast(125%);
+}
+
+html.high-contrast body {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+}
+
+html.high-contrast button, html.high-contrast a {
+  border-width: 2px !important;
+}
