@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer, { Transporter } from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -12,7 +12,7 @@ export interface EmailDiagnostics {
 }
 
 class EmailService {
-  private transporter: any = null;
+  private transporter: Transporter | null = null;
   private isVerified = false;
 
   constructor() {
@@ -20,25 +20,17 @@ class EmailService {
   }
 
   /**
-   * Get dynamic SMTP Config from environment variables
+   * Get dynamic SMTP Config from environment variables.
+   * Defaults to Resend SMTP configuration on port 465 with secure TLS.
    */
   private getConfig() {
     dotenv.config();
-    const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-    const port = Number(process.env.SMTP_PORT) || 587;
-    const user = (process.env.SMTP_USER || process.env.SMTP_USERNAME || '').trim();
-    const pass = (process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '').trim();
-    const secure = process.env.SMTP_SECURE === 'true' || port === 465;
-
-    // Sender Address: For Gmail SMTP, sender address must match the authenticated account user
-    let from = (process.env.EMAIL_FROM || '').trim();
-    if (!from || from.includes('no-reply@mota.gov.in')) {
-      if (user && user.includes('@gmail.com')) {
-        from = `Tribal Scholar AI <${user}>`;
-      } else if (!from) {
-        from = 'Ministry of Tribal Affairs <no-reply@mota.gov.in>';
-      }
-    }
+    const host = (process.env.SMTP_HOST || 'smtp.resend.com').trim();
+    const port = Number(process.env.SMTP_PORT) || 465;
+    const user = (process.env.SMTP_USER || process.env.SMTP_USERNAME || 'resend').trim();
+    const pass = (process.env.SMTP_PASS || process.env.RESEND_API_KEY || process.env.SMTP_PASSWORD || '').trim();
+    const secure = process.env.SMTP_SECURE === 'false' ? false : (port === 465 || process.env.SMTP_SECURE === 'true');
+    const from = (process.env.EMAIL_FROM || 'onboarding@resend.dev').trim();
 
     return { host, port, user, pass, secure, from };
   }
@@ -71,8 +63,27 @@ class EmailService {
     console.log(`SMTP_PASSWORD_LOADED=${passLoaded}`);
     console.log(`SMTP_HOST=${cfg.host}`);
     console.log(`SMTP_PORT=${cfg.port}`);
+    console.log(`SMTP_SECURE=${cfg.secure}`);
     console.log(`SMTP_CONFIGURED=${configured}`);
     console.log('📧 =======================================================\n');
+  }
+
+  /**
+   * Helper to create Nodemailer Transporter with strict connection/socket timeouts
+   */
+  private createTransporterInstance(cfg: ReturnType<typeof this.getConfig>): Transporter {
+    return nodemailer.createTransport({
+      host: cfg.host,
+      port: cfg.port,
+      secure: cfg.secure,
+      auth: {
+        user: cfg.user,
+        pass: cfg.pass,
+      },
+      connectionTimeout: 10000, // 10s connection timeout
+      greetingTimeout: 10000,   // 10s greeting timeout
+      socketTimeout: 15000,     // 15s socket activity timeout
+    });
   }
 
   /**
@@ -99,56 +110,42 @@ class EmailService {
     const passConfigured = Boolean(cfg.pass);
 
     console.log('\n=======================================================');
-    console.log('EMAIL TRANSPORT TEST');
-    console.log('Provider: Gmail (Nodemailer SMTP)');
-    console.log(`Host: ${hostConfigured ? 'configured' : 'missing'}`);
-    console.log(`Port: ${portConfigured ? 'configured' : 'missing'}`);
-    console.log(`User: ${userConfigured ? 'configured' : 'missing'}`);
-    console.log(`Password: ${passConfigured ? 'configured' : 'missing'}`);
+    console.log('EMAIL TRANSPORT VERIFICATION');
+    console.log(`Host: ${cfg.host}`);
+    console.log(`Port: ${cfg.port}`);
+    console.log(`Secure TLS: ${cfg.secure}`);
+    console.log(`User Configured: ${userConfigured}`);
+    console.log(`Pass Configured: ${passConfigured}`);
 
     if (!userConfigured || !passConfigured) {
-      console.log('Transport verification: FAILED');
-      console.log('Reason: SMTP_USER or SMTP_PASS missing in backend/.env');
+      console.log('Transport verification: FAILED (Credentials missing)');
       return {
         success: false,
-        provider: 'Gmail (Nodemailer SMTP)',
+        provider: `${cfg.host} (Nodemailer SMTP)`,
         hostConfigured,
         portConfigured,
         userConfigured,
         passConfigured,
         safeError: {
           code: 'EAUTH_MISSING',
-          message: 'SMTP_USER or SMTP_PASS environment variables are missing in backend/.env',
+          message: 'SMTP_USER or SMTP_PASS environment variables are missing',
         },
       };
     }
 
     try {
-      const testTransporter = nodemailer.createTransport({
-        host: cfg.host,
-        port: cfg.port,
-        secure: cfg.secure,
-        auth: {
-          user: cfg.user,
-          pass: cfg.pass,
-        },
-        tls: {
-          rejectUnauthorized: false,
-        },
-      });
+      const testTransporter = this.createTransporterInstance(cfg);
 
       return await new Promise((resolve) => {
         testTransporter.verify((error: any) => {
           if (error) {
             console.log('Transport verification: FAILED');
             console.log(`error.code: ${error.code || 'N/A'}`);
-            console.log(`error.responseCode: ${error.responseCode || 'N/A'}`);
-            console.log(`error.command: ${error.command || 'N/A'}`);
             console.log(`error.message: ${error.message || 'N/A'}`);
 
             resolve({
               success: false,
-              provider: 'Gmail (Nodemailer SMTP)',
+              provider: `${cfg.host} (Nodemailer SMTP)`,
               hostConfigured,
               portConfigured,
               userConfigured,
@@ -162,10 +159,9 @@ class EmailService {
             });
           } else {
             console.log('Transport verification: SUCCESS');
-            console.log('SMTP transport verified successfully.');
             resolve({
               success: true,
-              provider: 'Gmail (Nodemailer SMTP)',
+              provider: `${cfg.host} (Nodemailer SMTP)`,
               hostConfigured,
               portConfigured,
               userConfigured,
@@ -178,7 +174,7 @@ class EmailService {
       console.log('Transport verification: FAILED');
       return {
         success: false,
-        provider: 'Gmail (Nodemailer SMTP)',
+        provider: `${cfg.host} (Nodemailer SMTP)`,
         hostConfigured,
         portConfigured,
         userConfigured,
@@ -200,36 +196,24 @@ class EmailService {
 
     if (cfg.user && cfg.pass) {
       try {
-        this.transporter = nodemailer.createTransport({
-          host: cfg.host,
-          port: cfg.port,
-          secure: cfg.secure,
-          auth: {
-            user: cfg.user,
-            pass: cfg.pass,
-          },
-          tls: {
-            rejectUnauthorized: false,
-          },
-        });
+        this.transporter = this.createTransporterInstance(cfg);
 
         console.log('[EMAIL SERVICE INIT]: SUCCESS — Transporter configured');
 
         this.transporter.verify((error: any) => {
           if (error) {
             this.isVerified = false;
-            console.error('❌ [SMTP VERIFICATION]: FAILED —', error.message);
+            console.error('❌ [SMTP VERIFICATION]: FAILED —', error.message || error);
           } else {
             this.isVerified = true;
-            console.log(`✅ [SMTP VERIFICATION]: SUCCESS — Ready for ${cfg.host}:${cfg.port}`);
+            console.log(`✅ [SMTP VERIFICATION]: SUCCESS — Connected to ${cfg.host}:${cfg.port}`);
           }
         });
       } catch (err: any) {
         console.error('❌ [EMAIL SERVICE INIT]: FAILED —', err?.message || err);
       }
     } else {
-      console.warn('⚠️ [EMAIL SERVICE INIT]: SMTP_USER or SMTP_PASS not set in backend/.env.');
-      console.warn('⚠️ Real email delivery to Gmail recipients requires SMTP credentials in backend/.env.');
+      console.warn('⚠️ [EMAIL SERVICE INIT]: SMTP credentials not fully configured in environment.');
     }
   }
 
@@ -244,7 +228,7 @@ class EmailService {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #DDD3C5; border-radius: 12px; overflow: hidden; background-color: #FCFAF5;">
         <div style="background-color: #5B1720; color: #FFFDF8; padding: 20px; text-align: center;">
           <h2 style="margin: 0; font-size: 22px; font-weight: 700;">Tribal Scholar AI</h2>
-          <p style="margin: 4px 0 0 0; font-size: 13px; color: #C49A44; font-weight: 600;">Ministry of Tribal Affairs</p>
+          <p style="margin: 4px 0 0 0; font-size: 13px; color: #C49A44; font-weight: 600;">Ministry of Tribal Affairs Alignment</p>
         </div>
         <div style="padding: 28px 24px; color: #292522;">
           <p style="font-size: 14px; font-weight: 600; margin-top: 0;">Dear ${name},</p>
@@ -260,20 +244,16 @@ class EmailService {
           </p>
         </div>
         <div style="background-color: #5B1720; color: #F2E9DC; padding: 14px; text-align: center; font-size: 11px;">
-          © 2026 Ministry of Tribal Affairs. Tribal Scholar AI.
+          © 2026 Tribal Scholar AI Initiative. SIH 2026 Prototype.
         </div>
       </div>
     `;
 
-    console.log(`[OTP] Email send started for: ${email}`);
+    const maskedDomain = email.includes('@') ? email.split('@')[1] : 'unknown';
+    console.log(`[OTP] Dispatching email verification to domain: ${maskedDomain}`);
 
     if (!cfg.user || !cfg.pass) {
-      console.error("EMAIL_SEND_FAILED", {
-        code: 'EAUTH_MISSING',
-        responseCode: undefined,
-        command: 'AUTH',
-        message: 'SMTP_USER or SMTP_PASS is missing in backend/.env',
-      });
+      console.error("[OTP] EMAIL_SEND_FAILED: SMTP credentials missing");
       return false;
     }
 
@@ -282,65 +262,49 @@ class EmailService {
     }
 
     if (!this.transporter) {
-      console.error("EMAIL_SEND_FAILED", {
-        code: 'ETRANSPORTER_UNINITIALIZED',
-        responseCode: undefined,
-        command: 'INIT',
-        message: 'SMTP transporter could not be initialized',
-      });
+      console.error("[OTP] EMAIL_SEND_FAILED: SMTP transporter could not be initialized");
       return false;
     }
 
     try {
-      const info = await this.transporter.sendMail({
+      // Race sendMail against a 16s hard safety timeout so HTTP requests never hang indefinitely
+      const sendPromise = this.transporter.sendMail({
         from: cfg.from,
         to: email,
         subject,
         html,
       });
 
-      console.log("EMAIL_SEND_SUCCESS", {
-        messageId: info.messageId,
-        accepted: info.accepted,
-        rejected: info.rejected,
-        response: info.response,
-      });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('SMTP transmission timed out after 16 seconds')), 16000)
+      );
 
-      const isAccepted = Array.isArray(info.accepted) && info.accepted.length > 0;
+      const info: any = await Promise.race([sendPromise, timeoutPromise]);
 
-      if (isAccepted) {
+      const isAccepted = Array.isArray(info?.accepted) && info.accepted.length > 0;
+      if (isAccepted || info?.messageId) {
+        console.log(`[OTP] EMAIL_SEND_SUCCESS: Email dispatched via ${cfg.host}:${cfg.port}`);
         return true;
       } else {
-        console.error("EMAIL_SEND_FAILED", {
-          code: 'RECIPIENT_REJECTED',
-          responseCode: undefined,
-          command: 'RCPT TO',
-          message: `Provider rejected recipient address ${email}`,
-        });
+        console.error("[OTP] EMAIL_SEND_FAILED: Recipient address rejected by SMTP server");
         return false;
       }
     } catch (error: any) {
-      console.error("EMAIL_SEND_FAILED", {
-        code: error.code,
-        responseCode: error.responseCode,
-        command: error.command,
-        message: error.message,
-      });
+      console.error(`[OTP] EMAIL_SEND_FAILED: ${error?.message || 'SMTP transmission error'}`);
       return false;
     }
   }
 
   /**
-   * Development-Only Test Email Delivery Function
+   * Test Email Delivery Function
    */
   async sendTestEmail(targetEmail: string): Promise<{ success: boolean; messageId?: string; accepted?: any; error?: string; details?: any }> {
     const cfg = this.getConfig();
 
     if (!cfg.user || !cfg.pass) {
-      console.error('[OTP] TEST_EMAIL_FAILED: SMTP_USER or SMTP_PASS missing in backend/.env');
       return {
         success: false,
-        error: 'SMTP_USER or SMTP_PASS is not configured in backend/.env. Real email delivery is impossible until SMTP credentials are provided.',
+        error: 'SMTP credentials missing in environment variables.',
       };
     }
 
@@ -353,7 +317,6 @@ class EmailService {
     }
 
     try {
-      console.log(`[OTP] Test email send started for: ${targetEmail}`);
       const info = await this.transporter.sendMail({
         from: cfg.from,
         to: targetEmail,
@@ -362,11 +325,11 @@ class EmailService {
           <div style="font-family: Arial, sans-serif; padding: 24px; border: 1px solid #DDD3C5; border-radius: 10px; max-width: 600px; margin: 0 auto; background-color: #FCFAF5;">
             <div style="background-color: #5B1720; color: #FFFDF8; padding: 16px; text-align: center; border-radius: 6px;">
               <h2 style="margin: 0; font-size: 20px;">Tribal Scholar AI</h2>
-              <p style="margin: 4px 0 0 0; font-size: 12px; color: #C49A44;">Ministry of Tribal Affairs</p>
+              <p style="margin: 4px 0 0 0; font-size: 12px; color: #C49A44;">SIH 2026 Prototype</p>
             </div>
             <div style="padding: 20px 0; color: #292522;">
               <h3 style="color: #7A1F2B; margin-top: 0;">Email Delivery Test</h3>
-              <p style="font-size: 14px; line-height: 1.5; color: #3D352E;">This is a test email from the Tribal Scholar AI development environment.</p>
+              <p style="font-size: 14px; line-height: 1.5; color: #3D352E;">This is a test email from the Tribal Scholar AI platform.</p>
               <p style="font-size: 12px; color: #6B6259;">Timestamp: ${new Date().toISOString()}</p>
             </div>
           </div>
@@ -374,23 +337,19 @@ class EmailService {
       });
 
       const isAccepted = Array.isArray(info.accepted) && info.accepted.length > 0;
-      if (isAccepted) {
-        console.log(`[OTP] Test email provider response: ACCEPTED (Message ID: ${info.messageId})`);
+      if (isAccepted || info.messageId) {
         return {
           success: true,
           messageId: info.messageId,
           accepted: info.accepted,
         };
       } else {
-        console.error(`[OTP] TEST_EMAIL_FAILED: Provider did not accept address ${targetEmail}`);
         return {
           success: false,
-          error: `Provider did not accept target address: ${targetEmail}`,
-          details: info,
+          error: `Provider rejected target address: ${targetEmail}`,
         };
       }
     } catch (err: any) {
-      console.error(`[OTP] TEST_EMAIL_FAILED: ${err?.message || err}`);
       return {
         success: false,
         error: err?.message || 'SMTP transmission error',
