@@ -37,7 +37,7 @@ export const Logo: React.FC<{ variant?: 'light' | 'dark'; size?: 'sm' | 'md' | '
           Tribal Scholar <span className={isDark ? 'text-terracotta' : 'text-gold'}>AI</span>
         </span>
         <span className={`text-[10px] uppercase tracking-widest font-semibold ${isDark ? 'text-muted-text' : 'text-[#D8CFC4]'}`}>
-          MINISTRY OF TRIBAL AFFAIRS
+          SIH 2026 PROTOTYPE • SCHOLARSHIP COPILOT
         </span>
       </div>
     </Link>
