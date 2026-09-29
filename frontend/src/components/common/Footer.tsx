@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
           <div className="space-y-3 md:col-span-1">
             <Logo size="sm" variant="light" />
             <p className="text-[#F2E9DC] text-xs leading-relaxed font-medium">
-              {t('heroSubtitle')}
+              AI-enabled scholarship assistance platform empowering Scheduled Tribe students across India.
             </p>
           </div>
 
@@ -30,18 +30,17 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Column 3: AI Innovations */}
+          {/* Column 3: Legal & Governance */}
           <div className="space-y-2">
-            <h4 className="font-serif font-extrabold text-[#FFFDF8] text-sm tracking-wide">Core Innovations</h4>
+            <h4 className="font-serif font-extrabold text-[#FFFDF8] text-sm tracking-wide">Legal & Transparency</h4>
             <ul className="space-y-1.5 text-[#FFFDF8] text-xs font-medium">
-              <li><Link to="/student/deficiency-copilot" className="text-[#FFFDF8] hover:text-gold transition-colors">{t('deficiencyCopilot')}</Link></li>
-              <li><Link to="/student/digital-twin/1" className="text-[#FFFDF8] hover:text-gold transition-colors">{t('applicationTwin')}</Link></li>
-              <li><Link to="/student/progress" className="text-[#FFFDF8] hover:text-gold transition-colors">{t('progressTracker')}</Link></li>
-              <li><Link to="/student/renewals" className="text-[#FFFDF8] hover:text-gold transition-colors">{t('renewalCenter')}</Link></li>
+              <li><Link to="/privacy-policy" className="text-[#FFFDF8] hover:text-gold transition-colors flex items-center gap-1"><Lock className="w-3.5 h-3.5 text-gold" /> Privacy Policy</Link></li>
+              <li><Link to="/terms" className="text-[#FFFDF8] hover:text-gold transition-colors flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-gold" /> Terms & Conditions</Link></li>
+              <li><Link to="/cookie-policy" className="text-[#FFFDF8] hover:text-gold transition-colors flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5 text-gold" /> Cookie Policy</Link></li>
             </ul>
           </div>
 
-          {/* Column 4: Help & Governance */}
+          {/* Column 4: Help & Portals */}
           <div className="space-y-2">
             <h4 className="font-serif font-extrabold text-[#FFFDF8] text-sm tracking-wide">{t('resourcesHelp')}</h4>
             <ul className="space-y-1.5 text-[#FFFDF8] text-xs font-medium">
@@ -55,11 +54,11 @@ export const Footer: React.FC = () => {
 
         {/* Footer Bottom Strip */}
         <div className="flex flex-col sm:flex-row justify-between items-center text-xs text-[#E8DED2] font-semibold gap-3">
-          <p className="text-[#E8DED2]">© 2026 {t('govIndia')}. {t('footerRights')}</p>
+          <p className="text-[#E8DED2]">© 2026 Tribal Scholar AI Initiative. All rights reserved.</p>
           <div className="flex items-center gap-4 text-[#D8CFC4]">
-            <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5 text-gold" /> {t('accessibility')}</span>
-            <span className="flex items-center gap-1"><Lock className="w-3.5 h-3.5 text-gold" /> Encrypted & Aadhaar Verified</span>
-            <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-gold" /> MoTA Guidelines</span>
+            <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5 text-gold" /> Accessibility Compliant</span>
+            <span className="flex items-center gap-1"><Lock className="w-3.5 h-3.5 text-gold" /> Protected REST Streaming</span>
+            <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-gold" /> Verified MoTA Schemes</span>
           </div>
         </div>
       </div>

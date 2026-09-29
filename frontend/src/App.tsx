@@ -17,6 +17,9 @@ import { HowItWorksPage } from './pages/public/HowItWorksPage';
 import { HelpPage } from './pages/public/HelpPage';
 import { LoginPage } from './pages/public/LoginPage';
 import { RegisterPage } from './pages/public/RegisterPage';
+import { PrivacyPolicyPage } from './pages/public/PrivacyPolicyPage';
+import { TermsPage } from './pages/public/TermsPage';
+import { CookiePolicyPage } from './pages/public/CookiePolicyPage';
 
 import { StudentDashboard } from './pages/student/StudentDashboard';
 import { StudentProfile } from './pages/student/StudentProfile';
@@ -89,6 +92,9 @@ export const App: React.FC = () => {
         <Route path="/help" element={<HelpPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/cookie-policy" element={<CookiePolicyPage />} />
       </Route>
 
       {/* Student Portal Protected Routes */}

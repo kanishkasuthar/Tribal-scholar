@@ -267,6 +267,10 @@ export const RegisterPage: React.FC = () => {
                 </div>
               </div>
 
+              <p className="text-[11px] text-muted-text text-center font-medium">
+                By creating an account, I agree to the <Link to="/terms" className="text-brand-maroon font-bold underline">Terms & Conditions</Link> and acknowledge the <Link to="/privacy-policy" className="text-brand-maroon font-bold underline">Privacy Policy</Link>.
+              </p>
+
               <button
                 type="submit"
                 disabled={loading}
