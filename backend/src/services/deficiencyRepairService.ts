@@ -20,7 +20,7 @@ export interface DeficiencyDetail {
     documentName: string;
     applicationInstitution: string;
     documentInstitution?: string;
-    applicationIncome: number;
+    applicationIncome: number | string;
     documentIncome?: string;
   };
 }
@@ -89,12 +89,12 @@ export class DeficiencyRepairService {
       status: deficiency.status as any,
       createdAt: deficiency.createdAt,
       sideBySideComparison: {
-        applicationName: doc.user?.name || 'Kanishka Suthar',
-        documentName: fieldsMap['applicantName'] || 'Kanishka S.',
-        applicationInstitution: profile?.institutionName || 'National Institute of Technology Rourkela',
-        documentInstitution: fieldsMap['institutionName'],
-        applicationIncome: profile?.familyIncome || 180000,
-        documentIncome: fieldsMap['incomeAmount'],
+        applicationName: doc.user?.name || 'Applicant',
+        documentName: fieldsMap['applicantName'] || (doc.user?.name ? `${doc.user.name}` : 'Document Record'),
+        applicationInstitution: profile?.institutionName || profile?.schoolName || 'Not provided',
+        documentInstitution: fieldsMap['institutionName'] || 'Not provided',
+        applicationIncome: profile?.familyIncome !== null && profile?.familyIncome !== undefined ? `₹${Number(profile.familyIncome).toLocaleString('en-IN')}` : 'Not provided',
+        documentIncome: fieldsMap['incomeAmount'] ? `₹${Number(fieldsMap['incomeAmount']).toLocaleString('en-IN')}` : 'Not provided',
       },
     };
   }

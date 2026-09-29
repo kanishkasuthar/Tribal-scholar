@@ -128,14 +128,18 @@ export const StudentDeficiencyCopilotPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-white p-4 rounded-lg border border-border space-y-1">
                   <span className="text-[10px] font-bold text-muted-text block uppercase">APPLICATION PROFILE</span>
-                  <p className="font-serif font-extrabold text-base text-brand-dark font-mono">Kanishka Suthar</p>
-                  <span className="text-[10px] text-forest font-bold block">✓ Verified Aadhaar Name</span>
+                  <p className="font-serif font-extrabold text-base text-brand-dark font-mono">
+                    {activeDeficiency?.sideBySideComparison?.applicationName || 'Student Profile Record'}
+                  </p>
+                  <span className="text-[10px] text-forest font-bold block">✓ Registered Student Name</span>
                 </div>
 
                 <div className="bg-terracotta/10 p-4 rounded-lg border border-terracotta/30 space-y-1">
                   <span className="text-[10px] font-bold text-terracotta block uppercase">SUBMITTED DOCUMENT</span>
-                  <p className="font-serif font-extrabold text-base text-terracotta font-mono">Kanishka Sutharh</p>
-                  <span className="text-[10px] text-terracotta font-bold block">⚠ Extra 'h' detected in spelling</span>
+                  <p className="font-serif font-extrabold text-base text-terracotta font-mono">
+                    {activeDeficiency?.sideBySideComparison?.documentName || 'Document Record'}
+                  </p>
+                  <span className="text-[10px] text-terracotta font-bold block">⚠ Discrepancy detected in field text</span>
                 </div>
               </div>
             </div>

@@ -36,7 +36,7 @@ export class DocumentAnalysisService {
     }
 
     // 1. Execute OCR Extraction
-    const ocrResult = await OCRService.extractDocumentText(doc.docType, doc.fileName, doc.fileUrl);
+    const ocrResult = await OCRService.extractDocumentText(doc.docType, doc.fileName, doc.fileUrl, doc.userId);
 
     // Save extracted fields to DB
     await prisma.extractedDocumentField.deleteMany({ where: { documentId } });

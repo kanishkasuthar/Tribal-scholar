@@ -1,219 +1,117 @@
-# Tribal Scholar AI 🏛️
+# Tribal Scholar AI
 
-**Tagline:** *"Your Scholarship Journey, Simplified by AI."*
+> **"Your Scholarship Journey, Simplified by AI."**
 
-*SIH 2026 Problem Statement SIH26239 — Demonstration Prototype*
-
----
-
-## 1. Problem Statement
-
-Scheduled Tribe (ST) students across India face major hurdles in accessing government scholarships and research fellowships:
-- Complex eligibility rules leading to high rejection rates due to lack of guidance.
-- Document deficiencies (expired certificates, name mismatches) causing delayed disbursements or application rejections.
-- Black-box verification progress leaving students anxious and unaware of status.
-- Fragmented renewal tracking leading to lapsed grants year-over-year.
-- Language barriers and low digital literacy in remote tribal areas.
+An AI-assisted scholarship assistance platform designed for Scheduled Tribe (ST) students in India, providing end-to-end guidance from scholarship discovery to document verification, application tracking, and future funding roadmaps.
 
 ---
 
-## 2. Solution Overview
+## 🏛️ Executive Overview
+Navigating government scholarships often presents significant hurdles for ST students: fragmented scheme information, stringent document formatting rules, name/spelling mismatches on certificates, and opaque application review stages. 
 
-**Tribal Scholar AI** is a unified, end-to-end digital scholarship lifecycle platform designed for the **Ministry of Tribal Affairs**. It transforms complex scheme guidelines into explainable AI insights, proactively repairs document deficiencies, tracks verification via a live Digital Twin state machine, simplifies renewals, maps higher academic research roadmaps, and offers voice/multilingual accessibility for tribal students.
-
----
-
-## 3. Key Innovations
-
-1. **AI Scholarship & Fellowship Matching Engine:** Multi-factor scoring (% match score) across income, ST category, location, and academics.
-2. **Explainable AI Eligibility Engine:** Natural language explanation for why a student is eligible or what criteria need attention.
-3. **AI Document Intelligence & Deficiency Repair Copilot:** Automated OCR/field verification and interactive 5-step repair copilot.
-4. **Scholarship Application Digital Twin:** Live stage machine showing stage progress, responsible authority, and actionable student instructions.
-5. **Renewal Protection System:** Continuous academic tracking with automated renewal readiness scoring (0–100%).
-6. **Academic & Fellowship Future Opportunity Roadmap:** Long-term career progression and fellowship scenario simulation.
-7. **Voice & Multilingual AI Assistant:** Voice-enabled assistant supporting 7 Indian languages (`en`, `hi`, `kn`, `ta`, `te`, `mr`, `bn`).
-8. **Ministry Bottleneck Intelligence Dashboard:** Decision-support dashboard detecting processing delays and funding bottlenecks.
+**Tribal Scholar AI** bridges this gap with:
+1. **Student Intelligence**: Personalized rule-based AI scholarship matching and explainable eligibility breakdowns.
+2. **Document Intelligence**: Preventive AI Deficiency Copilot catching spelling/income discrepancies prior to official submission.
+3. **Application Intelligence**: Scholarship Application Digital Twin rendering live application states and responsible verification stages.
+4. **System Intelligence**: Process Intelligence analytics for Institute and Ministry administrators to identify bottleneck trends.
 
 ---
 
-## 4. Complete Lifecycle
+## 🌟 Key Features
 
-```
-DISCOVER → MATCH → UNDERSTAND → PREPARE → REPAIR → APPLY → VERIFY → TRACK → APPROVE → DISBURSE → RENEW → PROGRESS
-```
+### 1. AI Scholarship Matching & Explainable Eligibility
+- **Personalized Eligibility**: Evaluates student profile attributes (education stage, course, ST category, domicile state, annual family income, CGPA/%) against 100% verified Ministry of Tribal Affairs (MoTA) and National Scholarship Portal (NSP) schemes.
+- **Explainable Match Breakdown**: Generates transparent profile match percentages with detailed criteria evaluation (`SATISFIED`, `ACTION_REQUIRED`, `NEEDS_INFO`) and recommended resolution steps.
 
----
+### 2. Preventive AI Deficiency Repair Copilot
+- **5-Stage Stepper Workflow**: `DETECT` → `EXPLAIN` → `REPAIR` → `RECHECK` → `RESOLVED`.
+- **Side-by-Side Comparison**: Highlights discrepancies (e.g., Tehsil spelling variations between Aadhaar and Income Certificates) and guides students on uploading official affidavits or corrected certificates.
 
-## 5. AI Capabilities & Non-Authoritative Guardrails
+### 3. Scholarship Application Digital Twin
+- **Real-Time Lifecycle Tracking**: Tracks application progress across `DRAFT`, `SUBMITTED`, `DOCUMENT_REVIEW`, `INSTITUTE_VERIFICATION`, `DEPARTMENT_VERIFICATION`, `APPROVED`, `DISBURSEMENT`, and `RETURNED_FOR_CORRECTION` stages.
 
-- **Explainability:** AI explains eligibility and deficiency issues in simple language.
-- **Safety Guardrail:** AI model does NOT alter database state, change application statuses, approve/reject applications, or invent rules.
-- **Source of Truth:** Deterministic backend business rules and database state remain the sole authoritative source of truth.
-- **Graceful Fallback:** If AI APIs are unavailable, the platform seamlessly displays rule-based fallbacks without breaking the UI.
+### 4. Opportunity & Renewal Roadmap
+- **Adaptive Education Levels**: Tailors roadmaps across School (Class 9-12), Diploma/ITI, Undergraduate (B.Tech, B.Sc, B.A.), Postgraduate, Research (M.Phil/Ph.D.), and Professional programs.
 
----
+### 5. Multi-Role Verification & Process Intelligence
+- **Student Portal**: Manage profile, documents, applications, grievances, and AI recommendations.
+- **Institute Officer Desk**: Review bonafide status, verify academic records, and resolve flagged deficiencies.
+- **Ministry Admin Desk**: Process intelligence bottleneck explorer, geographic trend analysis, and grievance resolution monitoring.
 
-## 6. User Roles
-
-- **Student:** Account creation, profile management, scheme discovery, document upload, deficiency repair, digital twin tracking, renewal, roadmap, voice assistant.
-- **Institute Nodal Officer:** Workload verification workspace, field validation, document inspection, approval forwarding, and return-for-correction with officer comments.
-- **Ministry Admin:** National analytics, bottleneck detection, state/district distribution metrics, Direct Benefit Transfer overview, and system audit logs.
-
----
-
-## 7. Technology Stack
-
-- **Frontend:** React 18, Vite, TypeScript, Tailwind CSS, Lucide Icons, Recharts, Framer Motion.
-- **Backend:** Node.js, Express, TypeScript, REST APIs, JWT, bcryptjs, Multer.
-- **Database:** Prisma ORM with SQLite (development) / PostgreSQL (production).
-- **Voice & Accessibility:** Web Speech API, ARIA accessibility, high-contrast themes.
+### 6. Bilingual & Accessible User Interface
+- **English / Hindi Experience**: Integrated Devanagari translation support with user language persistence.
+- **Accessibility**: Keyboard focus styling, ARIA landmarks, mobile-responsive layout, and high-contrast editorial typography.
 
 ---
 
-## 8. System Architecture
+## 🏗️ Technology Stack
 
-```
-[ React 18 SPA (Vite + TS) ]  <--->  [ Express REST API (Node.js + TS) ]
-         │                                       │
-         ├─ Voice & Multilingual                 ├─ JWT & RBAC Middleware
-         ├─ Digital Twin UI Component            ├─ AI Services (Matching, Repair, Guidance)
-         └─ Recharts Analytics                   └─ Prisma ORM
-                                                         │
-                                               [ SQLite / PostgreSQL DB ]
-```
+| Layer | Technology |
+| :--- | :--- |
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Lucide Icons |
+| **Backend** | Node.js, Express, TypeScript, Prisma ORM |
+| **Database** | SQLite (Development) / PostgreSQL (Production) |
+| **Security** | JWT Authentication, BCrypt Password Hashing, Protected Document Streaming |
+| **Email / OTP** | Nodemailer SMTP (Gmail Integration) + Controlled Development OTP Mode |
 
 ---
 
-## 9. Major Features
+## 🔧 Installation & Setup
 
-- ST Scholarship & National Fellowship Matching
-- 5-Step Deficiency Repair Copilot
-- Live Application Digital Twin Timeline
-- Institute Nodal Officer Verification Desk
-- Ministry Bottleneck & Risk Intelligence
-- Continuous Grant Renewal Engine
-- Academic Future Opportunity Roadmap
-- Multilingual & Voice AI Assistant
+### Prerequisites
+- Node.js (v18+)
+- npm or yarn
 
----
-
-## 10. Installation
-
+### 1. Clone & Install Dependencies
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/tribal-scholar-ai.git
-cd tribal-scholar-ai
+git clone https://github.com/kanishkasuthar/Tribal-scholar.git
+cd Tribal-scholar
 
 # Install root dependencies
 npm install
 
 # Install backend dependencies
-cd backend && npm install
+cd backend && npm install && cd ..
 
 # Install frontend dependencies
-cd ../frontend && npm install
+cd frontend && npm install && cd ..
 ```
 
----
-
-## 11. Environment Variables
-
-Create `.env` inside `backend/` based on `.env.example`:
-
-```env
-PORT=5001
-DATABASE_URL="file:../prisma/dev.db"
-JWT_SECRET="tribal_scholar_ai_super_secret_jwt_key_2026"
-AI_API_KEY="your_api_key_placeholder"
-STORAGE_URL="http://localhost:5001/uploads"
-NODE_ENV="development"
-FRONTEND_URL="http://localhost:5173"
-```
-
-Create `.env` inside `frontend/`:
-
-```env
-VITE_API_URL="http://localhost:5001/api"
-```
-
----
-
-## 12. Database Setup
-
+### 2. Environment Configuration
+Copy `.env.example` to `.env` in both root and `backend` directories:
 ```bash
-# Push database schema using Prisma
-cd backend
-npx prisma db push --schema=../prisma/schema.prisma
-
-# Seed demo data
-npx ts-node -O '{"module":"commonjs","moduleResolution":"node"}' ../prisma/seed.ts
+cp .env.example .env
+cp .env.example backend/.env
 ```
 
----
-
-## 13. Running Backend
-
+### 3. Database Initialization & Seeding
 ```bash
-cd backend
-npm run dev
-# Express API server starts on http://localhost:5001
+# Push Prisma schema to SQLite database
+npx prisma db push
+
+# Seed official Ministry of Tribal Affairs schemes
+node prisma/seedOfficialSchemes.js
 ```
 
----
-
-## 14. Running Frontend
-
+### 4. Running Development Servers
 ```bash
-cd frontend
-npm run dev
-# Vite development app starts on http://localhost:5173
+# Terminal 1: Backend Server (Port 5001)
+cd backend && npm run dev
+
+# Terminal 2: Frontend Server (Port 5173)
+cd frontend && npm run dev
 ```
 
----
-
-## 15. Demo Accounts
-
-| Role | Email | Password | Primary Page |
-| :--- | :--- | :--- | :--- |
-| **ST Student** | `student@demo.com` | `student123` | `/student/dashboard` |
-| **Institute Officer** | `institute@demo.com` | `institute123` | `/institute/dashboard` |
-| **Ministry Admin** | `admin@demo.com` | `admin123` | `/admin/dashboard` |
+Open `http://localhost:5173` in your browser.
 
 ---
 
-## 16. API Documentation
-
-Detailed REST API specifications are documented in [`docs/API.md`](file:///Users/kanishkasuthar/.gemini/antigravity/scratch/tribal-scholar-ai/docs/API.md).
-
----
-
-## 17. Security Specifications
-
-- Passwords hashed using `bcryptjs` (salt round 10).
-- JWT token authentication with role-based middleware (`STUDENT`, `INSTITUTE`, `ADMIN`).
-- Server-side file upload validation (MIME types, extensions, file size limits, non-public storage).
-- Prevention of cross-tenant data access (Students can only access their own profile/documents/applications).
-- Non-exposure of bank secrets and sensitive PII in public APIs or logs.
+## 🔒 Security & Data Integrity Policies
+- **Authentication**: All self-registered users receive `STUDENT` role by default.
+- **Protected File Streaming**: Documents are served via authenticated REST endpoints (`/api/documents/:id/download`) verifying ownership. Direct static directory browsing is forbidden.
+- **Zero Fabricated Student Data**: Unprovided profile fields default to `"Not provided"`. Demo records in admin/institute queues are explicitly marked with `isDemoRecord: true` and `[Illustrative Demo]` badges.
 
 ---
 
-## 18. AI Limitations & Guardrails
-
-- AI recommendations are non-authoritative advisory prompts.
-- Deterministic backend logic enforces eligibility criteria, submission deadlines, and status transitions.
-- All AI responses provide rule-based fallbacks if AI services experience timeouts.
-
----
-
-## 19. Deployment Guide
-
-Detailed deployment instructions for Vercel (Frontend), Render (Backend), and PostgreSQL are documented in [`docs/DEPLOYMENT.md`](file:///Users/kanishkasuthar/.gemini/antigravity/scratch/tribal-scholar-ai/docs/DEPLOYMENT.md).
-
----
-
-## 20. SIH 2026 Context
-
-- **Problem Statement Code:** SIH26239
-- **Target Beneficiaries:** Scheduled Tribe (ST) students across India
-- **Ministry:** Ministry of Tribal Affairs, Government of India
-- **Status:** Complete Demonstration Prototype (Phases 0–7 Complete)
+## 📄 License & Attribution
+Maintained under the SIH 2026 Development Initiative. Built for Scheduled Tribe student empowerment in alignment with Ministry of Tribal Affairs guidelines.

@@ -1,5 +1,7 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import path from 'path';
+import fs from 'fs';
 import { AuthRequest } from '../middleware/auth';
 import { DocumentAnalysisService } from '../services/documentAnalysisService';
 
@@ -196,6 +198,38 @@ export const deleteDocument = async (req: AuthRequest, res: Response) => {
 
     await prisma.document.delete({ where: { id } });
     return res.json({ success: true, message: 'Document deleted successfully' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const downloadDocumentFile = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const { id } = req.params;
+
+    const document = await prisma.document.findUnique({
+      where: { id },
+    });
+
+    if (!document) {
+      return res.status(404).json({ success: false, message: 'Document not found' });
+    }
+
+    // Ownership & Authorization check: Student can only stream their own document. ADMIN & INSTITUTE can view for application review.
+    if (document.userId !== userId && userRole !== 'ADMIN' && userRole !== 'INSTITUTE') {
+      return res.status(403).json({ success: false, message: 'Forbidden: Unauthorized document access attempt.' });
+    }
+
+    const filePath = path.resolve(__dirname, '../../uploads', document.fileName);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, message: 'File not found on secure server storage.' });
+    }
+
+    res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+    return res.sendFile(filePath);
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }

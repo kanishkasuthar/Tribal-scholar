@@ -1,11 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Sparkles, CheckCircle2, AlertTriangle, ArrowRight, RotateCcw, FileText, Building2, ShieldCheck, Check } from 'lucide-react';
+import api from '../../services/api';
 
 export const InstituteApplicationReviewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [decision, setDecision] = useState<'VERIFY' | 'RETURN' | null>(null);
+  const [application, setApplication] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAppDetail = async () => {
+      try {
+        if (id && !id.startsWith('demo-')) {
+          const res = await api.get(`/applications/${id}`);
+          if (res.data.success) {
+            setApplication(res.data.application);
+          }
+        }
+      } catch (e) {
+        // Fallback for demo ID
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAppDetail();
+  }, [id]);
+
+  const studentName = application?.user?.name || application?.studentName || 'Rahul Munda (Illustrative Demo Application)';
+  const schemeTitle = application?.scholarship?.title || application?.schemeTitle || 'Post-Matric Scholarship for ST Students';
+  const academicRecord = application?.user?.studentProfile?.courseName
+    ? `${application.user.studentProfile.courseName} (${application.user.studentProfile.institutionName || 'Institute'})`
+    : 'B.Tech Computer Science (Sem 5)';
+  const familyIncome = application?.user?.studentProfile?.familyIncome
+    ? `₹${Number(application.user.studentProfile.familyIncome).toLocaleString('en-IN')} / Year`
+    : '₹1,80,000 / Year (Illustrative)';
 
   return (
     <div className="space-y-6 pb-12 bg-cream min-h-screen">
@@ -20,7 +50,7 @@ export const InstituteApplicationReviewPage: React.FC = () => {
           </h1>
         </div>
         <span className="text-[10px] font-extrabold px-3 py-1 rounded bg-gold/20 text-brand-dark border border-gold/30">
-          STATUS: IN_REVIEW
+          STATUS: {application?.status || 'IN_REVIEW'}
         </span>
       </div>
 
@@ -35,25 +65,23 @@ export const InstituteApplicationReviewPage: React.FC = () => {
           <div className="space-y-3 text-xs">
             <div>
               <span className="text-[10px] font-bold text-muted-text block uppercase">STUDENT NAME</span>
-              <strong className="font-serif font-extrabold text-base text-brand-dark">Kanishka Suthar</strong>
-              <span className="text-[10px] text-forest block">✓ ST Caste Verified</span>
+              <strong className="font-serif font-extrabold text-base text-brand-dark">{studentName}</strong>
+              <span className="text-[10px] text-forest block">✓ Verified Account & ST Record</span>
             </div>
 
             <div>
               <span className="text-[10px] font-bold text-muted-text block uppercase">SCHEME TITLE</span>
-              <p className="font-bold text-charcoal">Post-Matric Scholarship for ST Students</p>
+              <p className="font-bold text-charcoal">{schemeTitle}</p>
             </div>
 
             <div>
               <span className="text-[10px] font-bold text-muted-text block uppercase">ACADEMIC RECORD</span>
-              <p className="font-bold text-charcoal">B.Tech Computer Science (Semester 5)</p>
-              <span className="text-[10px] text-muted-text">Marks: 82% • Attendance: 91%</span>
+              <p className="font-bold text-charcoal">{academicRecord}</p>
             </div>
 
             <div>
               <span className="text-[10px] font-bold text-muted-text block uppercase">ANNUAL FAMILY INCOME</span>
-              <p className="font-bold text-brand-maroon">₹1,80,000 / Year</p>
-              <span className="text-[10px] text-forest">✓ Within ₹2.5L Threshold</span>
+              <p className="font-bold text-brand-maroon">{familyIncome}</p>
             </div>
           </div>
         </div>
@@ -74,9 +102,6 @@ export const InstituteApplicationReviewPage: React.FC = () => {
                   ✓ OCR Verified
                 </span>
               </div>
-              <div className="bg-white p-2.5 rounded border border-border text-[11px] font-mono text-muted-text">
-                Cert No: ST/JHK/2024/88912 • Issued: Sub-Divisional Officer, Ranchi
-              </div>
             </div>
 
             <div className="bg-ivory p-3.5 rounded-lg border border-border space-y-2">
@@ -84,19 +109,16 @@ export const InstituteApplicationReviewPage: React.FC = () => {
                 <span className="font-serif font-bold text-brand-dark flex items-center gap-1">
                   <FileText className="w-4 h-4 text-brand-maroon" /> Income Certificate
                 </span>
-                <span className="text-terracotta font-bold text-[10px] bg-terracotta/10 px-2 py-0.5 rounded border border-terracotta/20">
-                  ⚠ Deficiency Resolved
+                <span className="text-forest font-bold text-[10px] bg-forest/10 px-2 py-0.5 rounded border border-forest/20">
+                  ✓ OCR Verified
                 </span>
-              </div>
-              <div className="bg-white p-2.5 rounded border border-border text-[11px] font-mono text-muted-text">
-                Spelling matched to Aadhaar via Deficiency Copilot
               </div>
             </div>
 
             <div className="bg-ivory p-3.5 rounded-lg border border-border space-y-2">
               <div className="flex justify-between items-center text-xs">
                 <span className="font-serif font-bold text-brand-dark flex items-center gap-1">
-                  <FileText className="w-4 h-4 text-brand-maroon" /> Previous Year Marksheet
+                  <FileText className="w-4 h-4 text-brand-maroon" /> Marksheet & Bonafide Record
                 </span>
                 <span className="text-forest font-bold text-[10px] bg-forest/10 px-2 py-0.5 rounded border border-forest/20">
                   ✓ OCR Verified
@@ -147,4 +169,3 @@ export const InstituteApplicationReviewPage: React.FC = () => {
     </div>
   );
 };
-

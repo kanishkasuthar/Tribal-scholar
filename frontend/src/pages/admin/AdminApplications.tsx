@@ -15,16 +15,14 @@ export const AdminApplications: React.FC = () => {
           setApplications(res.data.applications);
         } else {
           setApplications([
-            { id: '1', studentName: 'Kanishka Suthar', schemeTitle: 'Post-Matric Scholarship for ST', status: 'IN_REVIEW', submittedAt: '12 Oct 2026' },
-            { id: '2', studentName: 'Ramesh Munda', schemeTitle: 'Top Class Education Scheme', status: 'APPROVED', submittedAt: '14 Oct 2026' },
-            { id: '3', studentName: 'Sunita Oraon', schemeTitle: 'National Overseas Scholarship', status: 'DEFICIENCY', submittedAt: '15 Oct 2026' },
+            { id: 'demo-1', studentName: 'Rahul Munda (Illustrative Demo)', schemeTitle: 'Post-Matric Scholarship for ST', status: 'IN_REVIEW', submittedAt: '12 Oct 2026', isDemoRecord: true },
+            { id: 'demo-2', studentName: 'Sunita Oraon (Illustrative Demo)', schemeTitle: 'Top Class Education Scheme', status: 'APPROVED', submittedAt: '14 Oct 2026', isDemoRecord: true },
           ]);
         }
       } catch (e) {
         setApplications([
-          { id: '1', studentName: 'Kanishka Suthar', schemeTitle: 'Post-Matric Scholarship for ST', status: 'IN_REVIEW', submittedAt: '12 Oct 2026' },
-          { id: '2', studentName: 'Ramesh Munda', schemeTitle: 'Top Class Education Scheme', status: 'APPROVED', submittedAt: '14 Oct 2026' },
-          { id: '3', studentName: 'Sunita Oraon', schemeTitle: 'National Overseas Scholarship', status: 'DEFICIENCY', submittedAt: '15 Oct 2026' },
+          { id: 'demo-1', studentName: 'Rahul Munda (Illustrative Demo)', schemeTitle: 'Post-Matric Scholarship for ST', status: 'IN_REVIEW', submittedAt: '12 Oct 2026', isDemoRecord: true },
+          { id: 'demo-2', studentName: 'Sunita Oraon (Illustrative Demo)', schemeTitle: 'Top Class Education Scheme', status: 'APPROVED', submittedAt: '14 Oct 2026', isDemoRecord: true },
         ]);
       } finally {
         setLoading(false);

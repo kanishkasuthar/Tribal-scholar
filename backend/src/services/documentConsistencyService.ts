@@ -31,7 +31,7 @@ export class DocumentConsistencyService {
       };
     }
 
-    const expectedName = profile.user?.name || 'Kanishka Suthar';
+    const expectedName = profile.user?.name || '';
     const extractedName = extractedFields['applicantName'];
 
     // 1. Name Mismatch Check

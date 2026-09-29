@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 export interface CriterionCheck {
   name: string;
-  status: 'SATISFIED' | 'ACTION_REQUIRED' | 'NEEDS_VERIFICATION';
+  status: 'SATISFIED' | 'ACTION_REQUIRED' | 'NEEDS_VERIFICATION' | 'NEEDS_INFO';
   details: string;
   missingInfo?: string;
   recommendedAction?: string;
@@ -32,37 +32,57 @@ export class EligibilityService {
     const criteria: CriterionCheck[] = [];
 
     // 1. Academic Criterion
-    const studentPercentage = profile.academicMarks > 10 ? profile.academicMarks : profile.academicMarks * 9.5;
-    if (studentPercentage >= scheme.minMarksPercentage) {
-      criteria.push({
-        name: 'Academic Requirement',
-        status: 'SATISFIED',
-        details: `Your CGPA of ${profile.academicMarks} (${studentPercentage.toFixed(1)}%) meets the minimum required cutoff of ${scheme.minMarksPercentage}%.`,
-      });
+    if (profile.academicMarks !== null && profile.academicMarks !== undefined) {
+      const studentPercentage = profile.academicMarks > 10 ? profile.academicMarks : profile.academicMarks * 9.5;
+      if (studentPercentage >= scheme.minMarksPercentage) {
+        criteria.push({
+          name: 'Academic Requirement',
+          status: 'SATISFIED',
+          details: `Your CGPA of ${profile.academicMarks} (${studentPercentage.toFixed(1)}%) meets the minimum required cutoff of ${scheme.minMarksPercentage}%.`,
+        });
+      } else {
+        criteria.push({
+          name: 'Academic Requirement',
+          status: 'ACTION_REQUIRED',
+          details: `Minimum academic requirement is ${scheme.minMarksPercentage}%. Current calculated score is ${studentPercentage.toFixed(1)}%.`,
+          missingInfo: `Shortfall of ${(scheme.minMarksPercentage - studentPercentage).toFixed(1)}% in academic qualification.`,
+          recommendedAction: 'Upload updated marksheet with revised CGPA or request academic relaxation certificate if applicable.',
+        });
+      }
     } else {
       criteria.push({
         name: 'Academic Requirement',
-        status: 'ACTION_REQUIRED',
-        details: `Minimum academic requirement is ${scheme.minMarksPercentage}%. Current calculated score is ${studentPercentage.toFixed(1)}%.`,
-        missingInfo: `Shortfall of ${(scheme.minMarksPercentage - studentPercentage).toFixed(1)}% in academic qualification.`,
-        recommendedAction: 'Upload updated marksheet with revised CGPA or request academic relaxation certificate if applicable.',
+        status: 'NEEDS_INFO',
+        details: 'Academic score/marks not provided in student profile.',
+        missingInfo: 'Academic performance percentage or CGPA missing.',
+        recommendedAction: 'Update academic performance in My Profile.',
       });
     }
 
     // 2. Family Income Criterion
-    if (profile.familyIncome <= scheme.maxIncome) {
-      criteria.push({
-        name: 'Annual Family Income',
-        status: 'SATISFIED',
-        details: `Family annual income of ₹${profile.familyIncome.toLocaleString('en-IN')} is within the scheme ceiling limit of ₹${scheme.maxIncome.toLocaleString('en-IN')}.`,
-      });
+    if (profile.familyIncome !== null && profile.familyIncome !== undefined) {
+      if (profile.familyIncome <= scheme.maxIncome) {
+        criteria.push({
+          name: 'Annual Family Income',
+          status: 'SATISFIED',
+          details: `Family annual income of ₹${profile.familyIncome.toLocaleString('en-IN')} is within the scheme ceiling limit of ₹${scheme.maxIncome.toLocaleString('en-IN')}.`,
+        });
+      } else {
+        criteria.push({
+          name: 'Annual Family Income',
+          status: 'ACTION_REQUIRED',
+          details: `Family income of ₹${profile.familyIncome.toLocaleString('en-IN')} exceeds maximum allowed ceiling of ₹${scheme.maxIncome.toLocaleString('en-IN')}.`,
+          missingInfo: `Income ceiling exceeded by ₹${(profile.familyIncome - scheme.maxIncome).toLocaleString('en-IN')}.`,
+          recommendedAction: 'Verify if recent income certificate issued by Competent Authority (Tehsildar) accounts for allowable deductions.',
+        });
+      }
     } else {
       criteria.push({
         name: 'Annual Family Income',
-        status: 'ACTION_REQUIRED',
-        details: `Family income of ₹${profile.familyIncome.toLocaleString('en-IN')} exceeds maximum allowed ceiling of ₹${scheme.maxIncome.toLocaleString('en-IN')}.`,
-        missingInfo: `Income ceiling exceeded by ₹${(profile.familyIncome - scheme.maxIncome).toLocaleString('en-IN')}.`,
-        recommendedAction: 'Verify if recent income certificate issued by Competent Authority (Tehsildar) accounts for allowable deductions.',
+        status: 'NEEDS_INFO',
+        details: 'Annual family income details not provided in student profile.',
+        missingInfo: 'Family annual income missing.',
+        recommendedAction: 'Update family income details in My Profile.',
       });
     }
 

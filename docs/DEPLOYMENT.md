@@ -1,83 +1,54 @@
-# Production Deployment Guide — Tribal Scholar AI
+# TRIBAL SCHOLAR AI — DEPLOYMENT GUIDE
 
-This document details step-by-step instructions for deploying the **Tribal Scholar AI** platform to production environments.
+## 1. System Architecture Overview
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS (Deployed on Vercel)
+- **Backend**: Node.js + Express + TypeScript + Prisma ORM (Deployed on Render / Railway)
+- **Database**: SQLite / PostgreSQL / MySQL (Managed via Prisma DB Sync)
+- **File Storage**: Authenticated File Stream Endpoint (`/api/documents/:id/download`)
 
----
+## 2. Environment Variables Configuration
 
-## 1. System Requirements & Architecture
-
-- **Frontend Hosting:** Vercel, Netlify, or AWS CloudFront + S3 (Vite Single Page Application)
-- **Backend Service:** Render, Railway, AWS ECS, or DigitalOcean App Platform (Node.js Express Server)
-- **Database:** PostgreSQL (Render Postgres, Supabase, AWS RDS, or Neon)
-- **File Storage:** AWS S3 or Local Upload Directory with appropriate ACL permissions
-
----
-
-## 2. Environment Variables Setup
-
-Ensure production environment variables are properly set in your cloud deployment platform settings:
-
-### Backend Environment Variables
+### Backend (.env)
 ```env
 PORT=5001
-DATABASE_URL="postgresql://user:password@db-host:5432/tribalscholar?sslmode=require"
-JWT_SECRET="YOUR_HIGH_ENTROPY_PRODUCTION_JWT_SECRET_KEY"
 NODE_ENV="production"
-FRONTEND_URL="https://tribal-scholar-ai.vercel.app"
-STORAGE_URL="https://tribal-scholar-ai-api.onrender.com/uploads"
+AUTH_MODE="production"
+FRONTEND_URL="https://your-frontend-domain.vercel.app"
+DATABASE_URL="file:./dev.db"
+JWT_SECRET="your_production_jwt_secret_key"
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="sender@gmail.com"
+SMTP_PASS="16_char_app_password"
+EMAIL_FROM="Tribal Scholar AI <no-reply@mota.gov.in>"
 ```
 
-### Frontend Environment Variables
+### Frontend (.env)
 ```env
-VITE_API_URL="https://tribal-scholar-ai-api.onrender.com/api"
+VITE_API_BASE_URL="https://your-backend-domain.onrender.com/api"
 ```
 
----
+## 3. Build & Deployment Commands
 
-## 3. Database Migration & Seeding (PostgreSQL)
+### Backend Build
+```bash
+cd backend
+npm install
+npx prisma generate --schema=../prisma/schema.prisma
+npx prisma db push --schema=../prisma/schema.prisma
+npm run build
+npm start
+```
 
-1. Set `provider = "postgresql"` in `prisma/schema.prisma` for production deployment.
-2. Push database schema to production PostgreSQL instance:
-   ```bash
-   npx prisma db push --schema=./prisma/schema.prisma
-   ```
-3. Run database seed to populate default scholarships, fellowships, and demonstration accounts:
-   ```bash
-   npx ts-node -O '{"module":"commonjs","moduleResolution":"node"}' ./prisma/seed.ts
-   ```
+### Frontend Build
+```bash
+cd frontend
+npm install
+npm run build
+```
 
----
-
-## 4. Backend Deployment (Render / Cloud Container)
-
-1. Connect your GitHub repository to Render Web Service.
-2. Configure build settings:
-   - **Root Directory:** `backend`
-   - **Build Command:** `npm install && npm run build`
-   - **Start Command:** `npm start`
-3. Add environment variables in Render Dashboard.
-4. Verify backend health endpoint at: `https://<your-backend-domain>/api/health`.
-
----
-
-## 5. Frontend Deployment (Vercel)
-
-1. Create a new project on Vercel linked to the repository.
-2. Configure project settings:
-   - **Framework Preset:** Vite
-   - **Root Directory:** `frontend`
-   - **Build Command:** `npm run build`
-   - **Output Directory:** `dist`
-3. Set `VITE_API_URL` environment variable pointing to the backend production API.
-4. Deploy and verify HTTPS connection.
-
----
-
-## 6. Post-Deployment Verification Checklist
-
-- [ ] HTTPS enabled on both Frontend and Backend
-- [ ] CORS policies restrict requests strictly to the Frontend domain
-- [ ] JWT authentication tokens expire appropriately
-- [ ] Static file uploads served securely with proper MIME type restrictions
-- [ ] Database connection pool limits configured safely
-- [ ] System audit logs capture login & application state changes
+## 4. Production Security Controls
+1. **JWT Secret Enforcement**: Fails startup cleanly if `JWT_SECRET` is omitted in production mode.
+2. **CORS Security**: Restricts allowed origins strictly to `FRONTEND_URL`.
+3. **Protected Document Streaming**: Disables static public folder indexing; streams documents through ownership-authenticated REST endpoints.
+4. **BCrypt Hashing**: Hashes all passwords with cost factor 10.

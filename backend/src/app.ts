@@ -23,15 +23,27 @@ import processIntelligenceRoutes from './routes/processIntelligenceRoutes';
 const app = express();
 
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => {
+    const allowed = config.frontendUrl;
+    if (!origin || origin === allowed || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
   credentials: true,
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static directory for document uploads
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Protected Uploads directory handling
+app.use('/uploads', (req: Request, res: Response, next: NextFunction) => {
+  if (req.path === '/' || req.path === '') {
+    return res.status(403).json({ success: false, message: 'Forbidden: Direct uploads directory listing is prohibited.' });
+  }
+  next();
+}, express.static(path.join(__dirname, '../uploads')));
 
 // API Health Check
 app.get('/api/health', (req: Request, res: Response) => {
