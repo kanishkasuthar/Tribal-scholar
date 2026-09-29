@@ -1,4 +1,4 @@
-import nodemailer, { Transporter } from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -9,85 +9,83 @@ export interface EmailDiagnostics {
   smtpUserConfigured: boolean;
   smtpPassConfigured: boolean;
   emailFrom: string;
+  resendApiKeyConfigured: boolean;
+  provider: string;
 }
 
 class EmailService {
-  private transporter: Transporter | null = null;
-  private isVerified = false;
+  private resend: Resend | null = null;
 
   constructor() {
-    this.initTransporter();
+    this.initClient();
   }
 
   /**
-   * Get dynamic SMTP Config from environment variables.
-   * Defaults to Resend SMTP configuration on port 465 with secure TLS.
+   * Get dynamic configuration from environment variables.
+   * Uses RESEND_API_KEY (or SMTP_PASS fallback) for Resend HTTPS API.
    */
   private getConfig() {
     dotenv.config();
-    const host = (process.env.SMTP_HOST || 'smtp.resend.com').trim();
-    const port = Number(process.env.SMTP_PORT) || 465;
-    const user = (process.env.SMTP_USER || process.env.SMTP_USERNAME || 'resend').trim();
-    const pass = (process.env.SMTP_PASS || process.env.RESEND_API_KEY || process.env.SMTP_PASSWORD || '').trim();
-    const secure = process.env.SMTP_SECURE === 'false' ? false : (port === 465 || process.env.SMTP_SECURE === 'true');
+    const apiKey = (process.env.RESEND_API_KEY || process.env.SMTP_PASS || '').trim();
     const from = (process.env.EMAIL_FROM || 'onboarding@resend.dev').trim();
 
-    return { host, port, user, pass, secure, from };
+    return { apiKey, from };
   }
 
   /**
-   * Safe development diagnostic reporting required variables without exposing secret values
+   * Initialize Resend HTTPS API Client
+   */
+  public initClient() {
+    this.printDiagnostics();
+    const cfg = this.getConfig();
+
+    if (cfg.apiKey) {
+      try {
+        this.resend = new Resend(cfg.apiKey);
+        console.log('✅ [EMAIL SERVICE INIT]: SUCCESS — Resend HTTPS API client initialized');
+      } catch (err: any) {
+        console.error('❌ [EMAIL SERVICE INIT]: FAILED —', err?.message || err);
+        this.resend = null;
+      }
+    } else {
+      console.warn('⚠️ [EMAIL SERVICE INIT]: RESEND_API_KEY not configured in environment.');
+      this.resend = null;
+    }
+  }
+
+  /**
+   * Safe development diagnostic reporting without exposing secret values
    */
   public getDiagnostics(): EmailDiagnostics {
     const cfg = this.getConfig();
+    const isConfigured = Boolean(cfg.apiKey);
     return {
-      smtpHost: cfg.host,
-      smtpPort: cfg.port,
-      smtpSecure: cfg.secure,
-      smtpUserConfigured: Boolean(cfg.user),
-      smtpPassConfigured: Boolean(cfg.pass),
+      smtpHost: 'api.resend.com',
+      smtpPort: 443,
+      smtpSecure: true,
+      smtpUserConfigured: isConfigured,
+      smtpPassConfigured: isConfigured,
       emailFrom: cfg.from,
+      resendApiKeyConfigured: isConfigured,
+      provider: 'Resend HTTPS API',
     };
   }
 
   public printDiagnostics(): void {
     const cfg = this.getConfig();
-    const userLoaded = Boolean(cfg.user);
-    const passLoaded = Boolean(cfg.pass);
-    const configured = userLoaded && passLoaded;
+    const keyLoaded = Boolean(cfg.apiKey);
 
     console.log('\n📧 =======================================================');
-    console.log('📧 TRIBAL SCHOLAR AI — EMAIL SERVICE SMTP DIAGNOSTICS');
+    console.log('📧 TRIBAL SCHOLAR AI — EMAIL SERVICE (RESEND HTTPS API)');
     console.log('📧 =======================================================');
-    console.log(`SMTP_USER_LOADED=${userLoaded}`);
-    console.log(`SMTP_PASSWORD_LOADED=${passLoaded}`);
-    console.log(`SMTP_HOST=${cfg.host}`);
-    console.log(`SMTP_PORT=${cfg.port}`);
-    console.log(`SMTP_SECURE=${cfg.secure}`);
-    console.log(`SMTP_CONFIGURED=${configured}`);
+    console.log(`RESEND_API_KEY_LOADED=${keyLoaded}`);
+    console.log(`EMAIL_FROM=${cfg.from}`);
+    console.log(`PROVIDER=Resend HTTPS API (https://api.resend.com)`);
     console.log('📧 =======================================================\n');
   }
 
   /**
-   * Helper to create Nodemailer Transporter with strict connection/socket timeouts
-   */
-  private createTransporterInstance(cfg: ReturnType<typeof this.getConfig>): Transporter {
-    return nodemailer.createTransport({
-      host: cfg.host,
-      port: cfg.port,
-      secure: cfg.secure,
-      auth: {
-        user: cfg.user,
-        pass: cfg.pass,
-      },
-      connectionTimeout: 10000, // 10s connection timeout
-      greetingTimeout: 10000,   // 10s greeting timeout
-      socketTimeout: 15000,     // 15s socket activity timeout
-    });
-  }
-
-  /**
-   * Safe transport verification for development diagnostics
+   * Safe transport/client verification
    */
   public async verifyTransport(): Promise<{
     success: boolean;
@@ -104,124 +102,55 @@ class EmailService {
     };
   }> {
     const cfg = this.getConfig();
-    const hostConfigured = Boolean(cfg.host);
-    const portConfigured = Boolean(cfg.port);
-    const userConfigured = Boolean(cfg.user);
-    const passConfigured = Boolean(cfg.pass);
+    const isConfigured = Boolean(cfg.apiKey);
 
-    console.log('\n=======================================================');
-    console.log('EMAIL TRANSPORT VERIFICATION');
-    console.log(`Host: ${cfg.host}`);
-    console.log(`Port: ${cfg.port}`);
-    console.log(`Secure TLS: ${cfg.secure}`);
-    console.log(`User Configured: ${userConfigured}`);
-    console.log(`Pass Configured: ${passConfigured}`);
-
-    if (!userConfigured || !passConfigured) {
-      console.log('Transport verification: FAILED (Credentials missing)');
+    if (!isConfigured) {
       return {
         success: false,
-        provider: `${cfg.host} (Nodemailer SMTP)`,
-        hostConfigured,
-        portConfigured,
-        userConfigured,
-        passConfigured,
+        provider: 'Resend HTTPS API (api.resend.com)',
+        hostConfigured: true,
+        portConfigured: true,
+        userConfigured: false,
+        passConfigured: false,
         safeError: {
           code: 'EAUTH_MISSING',
-          message: 'SMTP_USER or SMTP_PASS environment variables are missing',
+          message: 'RESEND_API_KEY environment variable is missing',
         },
       };
     }
 
-    try {
-      const testTransporter = this.createTransporterInstance(cfg);
-
-      return await new Promise((resolve) => {
-        testTransporter.verify((error: any) => {
-          if (error) {
-            console.log('Transport verification: FAILED');
-            console.log(`error.code: ${error.code || 'N/A'}`);
-            console.log(`error.message: ${error.message || 'N/A'}`);
-
-            resolve({
-              success: false,
-              provider: `${cfg.host} (Nodemailer SMTP)`,
-              hostConfigured,
-              portConfigured,
-              userConfigured,
-              passConfigured,
-              safeError: {
-                code: error.code,
-                responseCode: error.responseCode,
-                command: error.command,
-                message: error.message,
-              },
-            });
-          } else {
-            console.log('Transport verification: SUCCESS');
-            resolve({
-              success: true,
-              provider: `${cfg.host} (Nodemailer SMTP)`,
-              hostConfigured,
-              portConfigured,
-              userConfigured,
-              passConfigured,
-            });
-          }
-        });
-      });
-    } catch (err: any) {
-      console.log('Transport verification: FAILED');
-      return {
-        success: false,
-        provider: `${cfg.host} (Nodemailer SMTP)`,
-        hostConfigured,
-        portConfigured,
-        userConfigured,
-        passConfigured,
-        safeError: {
-          code: err?.code || 'UNKNOWN',
-          message: err?.message || 'Failed to initialize SMTP transport',
-        },
-      };
-    }
+    return {
+      success: true,
+      provider: 'Resend HTTPS API (api.resend.com)',
+      hostConfigured: true,
+      portConfigured: true,
+      userConfigured: true,
+      passConfigured: true,
+    };
   }
 
   /**
-   * Initialize SMTP Transporter
-   */
-  public initTransporter() {
-    this.printDiagnostics();
-    const cfg = this.getConfig();
-
-    if (cfg.user && cfg.pass) {
-      try {
-        this.transporter = this.createTransporterInstance(cfg);
-
-        console.log('[EMAIL SERVICE INIT]: SUCCESS — Transporter configured');
-
-        this.transporter.verify((error: any) => {
-          if (error) {
-            this.isVerified = false;
-            console.error('❌ [SMTP VERIFICATION]: FAILED —', error.message || error);
-          } else {
-            this.isVerified = true;
-            console.log(`✅ [SMTP VERIFICATION]: SUCCESS — Connected to ${cfg.host}:${cfg.port}`);
-          }
-        });
-      } catch (err: any) {
-        console.error('❌ [EMAIL SERVICE INIT]: FAILED —', err?.message || err);
-      }
-    } else {
-      console.warn('⚠️ [EMAIL SERVICE INIT]: SMTP credentials not fully configured in environment.');
-    }
-  }
-
-  /**
-   * Send 6-digit Email Verification OTP
+   * Send 6-digit Email Verification OTP via Resend HTTPS API
    */
   async sendVerificationOTP(email: string, name: string, otp: string): Promise<boolean> {
     const cfg = this.getConfig();
+
+    const maskedDomain = email.includes('@') ? email.split('@')[1] : 'unknown';
+    console.log(`[OTP] Dispatching email verification via Resend HTTPS API to domain: ${maskedDomain}`);
+
+    if (!cfg.apiKey) {
+      console.error('[OTP] EMAIL_SEND_FAILED: RESEND_API_KEY missing in environment');
+      return false;
+    }
+
+    if (!this.resend) {
+      this.initClient();
+    }
+
+    if (!this.resend) {
+      console.error('[OTP] EMAIL_SEND_FAILED: Resend client could not be initialized');
+      return false;
+    }
 
     const subject = 'Tribal Scholar AI - Verify Your Email';
     const html = `
@@ -249,77 +178,57 @@ class EmailService {
       </div>
     `;
 
-    const maskedDomain = email.includes('@') ? email.split('@')[1] : 'unknown';
-    console.log(`[OTP] Dispatching email verification to domain: ${maskedDomain}`);
-
-    if (!cfg.user || !cfg.pass) {
-      console.error("[OTP] EMAIL_SEND_FAILED: SMTP credentials missing");
-      return false;
-    }
-
-    if (!this.transporter) {
-      this.initTransporter();
-    }
-
-    if (!this.transporter) {
-      console.error("[OTP] EMAIL_SEND_FAILED: SMTP transporter could not be initialized");
-      return false;
-    }
-
     try {
-      // Race sendMail against a 16s hard safety timeout so HTTP requests never hang indefinitely
-      const sendPromise = this.transporter.sendMail({
+      const { data, error } = await this.resend.emails.send({
         from: cfg.from,
-        to: email,
+        to: [email],
         subject,
         html,
       });
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('SMTP transmission timed out after 16 seconds')), 16000)
-      );
-
-      const info: any = await Promise.race([sendPromise, timeoutPromise]);
-
-      const isAccepted = Array.isArray(info?.accepted) && info.accepted.length > 0;
-      if (isAccepted || info?.messageId) {
-        console.log(`[OTP] EMAIL_SEND_SUCCESS: Email dispatched via ${cfg.host}:${cfg.port}`);
-        return true;
-      } else {
-        console.error("[OTP] EMAIL_SEND_FAILED: Recipient address rejected by SMTP server");
+      if (error) {
+        console.error(`[OTP] EMAIL_SEND_FAILED: ${error.message || 'Resend API error'}`);
         return false;
       }
+
+      if (data?.id) {
+        console.log(`[OTP] EMAIL_SEND_SUCCESS: Email dispatched via Resend HTTPS API (id: ${data.id})`);
+        return true;
+      }
+
+      console.error('[OTP] EMAIL_SEND_FAILED: Resend API returned no email ID');
+      return false;
     } catch (error: any) {
-      console.error(`[OTP] EMAIL_SEND_FAILED: ${error?.message || 'SMTP transmission error'}`);
+      console.error(`[OTP] EMAIL_SEND_FAILED: ${error?.message || 'Resend API request exception'}`);
       return false;
     }
   }
 
   /**
-   * Test Email Delivery Function
+   * Test Email Delivery Function via Resend HTTPS API
    */
   async sendTestEmail(targetEmail: string): Promise<{ success: boolean; messageId?: string; accepted?: any; error?: string; details?: any }> {
     const cfg = this.getConfig();
 
-    if (!cfg.user || !cfg.pass) {
+    if (!cfg.apiKey) {
       return {
         success: false,
-        error: 'SMTP credentials missing in environment variables.',
+        error: 'RESEND_API_KEY missing in environment variables.',
       };
     }
 
-    if (!this.transporter) {
-      this.initTransporter();
+    if (!this.resend) {
+      this.initClient();
     }
 
-    if (!this.transporter) {
-      return { success: false, error: 'Could not initialize SMTP transporter.' };
+    if (!this.resend) {
+      return { success: false, error: 'Could not initialize Resend API client.' };
     }
 
     try {
-      const info = await this.transporter.sendMail({
+      const { data, error } = await this.resend.emails.send({
         from: cfg.from,
-        to: targetEmail,
+        to: [targetEmail],
         subject: 'Tribal Scholar AI — Email Delivery Test',
         html: `
           <div style="font-family: Arial, sans-serif; padding: 24px; border: 1px solid #DDD3C5; border-radius: 10px; max-width: 600px; margin: 0 auto; background-color: #FCFAF5;">
@@ -329,30 +238,36 @@ class EmailService {
             </div>
             <div style="padding: 20px 0; color: #292522;">
               <h3 style="color: #7A1F2B; margin-top: 0;">Email Delivery Test</h3>
-              <p style="font-size: 14px; line-height: 1.5; color: #3D352E;">This is a test email from the Tribal Scholar AI platform.</p>
+              <p style="font-size: 14px; line-height: 1.5; color: #3D352E;">This is a test email from the Tribal Scholar AI platform via Resend HTTPS API.</p>
               <p style="font-size: 12px; color: #6B6259;">Timestamp: ${new Date().toISOString()}</p>
             </div>
           </div>
         `,
       });
 
-      const isAccepted = Array.isArray(info.accepted) && info.accepted.length > 0;
-      if (isAccepted || info.messageId) {
-        return {
-          success: true,
-          messageId: info.messageId,
-          accepted: info.accepted,
-        };
-      } else {
+      if (error) {
         return {
           success: false,
-          error: `Provider rejected target address: ${targetEmail}`,
+          error: error.message || 'Resend API returned error',
         };
       }
+
+      if (data?.id) {
+        return {
+          success: true,
+          messageId: data.id,
+          accepted: [targetEmail],
+        };
+      }
+
+      return {
+        success: false,
+        error: 'No message ID returned from Resend API',
+      };
     } catch (err: any) {
       return {
         success: false,
-        error: err?.message || 'SMTP transmission error',
+        error: err?.message || 'Resend API request error',
       };
     }
   }
@@ -365,20 +280,22 @@ class EmailService {
   }
 
   /**
-   * Send Notification Email
+   * Send Notification Email via Resend HTTPS API
    */
   async sendNotificationEmail(email: string, subject: string, content: string): Promise<boolean> {
     const cfg = this.getConfig();
-    if (!cfg.user || !cfg.pass || !this.transporter) return false;
+    if (!cfg.apiKey) return false;
+    if (!this.resend) this.initClient();
+    if (!this.resend) return false;
 
     try {
-      await this.transporter.sendMail({
+      const { data, error } = await this.resend.emails.send({
         from: cfg.from,
-        to: email,
+        to: [email],
         subject,
         html: `<div style="font-family: Arial; padding: 20px;">${content}</div>`,
       });
-      return true;
+      return !error && Boolean(data?.id);
     } catch (err: any) {
       console.error('❌ [NOTIFICATION EMAIL]: FAILED:', err?.message || err);
       return false;
