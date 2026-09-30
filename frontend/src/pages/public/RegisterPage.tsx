@@ -24,7 +24,7 @@ export const RegisterPage: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [devOtp, setDevOtp] = useState<string | null>(null);
+  const [demoOtp, setDemoOtp] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -36,23 +36,6 @@ export const RegisterPage: React.FC = () => {
     }
     return () => clearInterval(timer);
   }, [cooldown]);
-
-  // Fetch Dev OTP if in step 2 (development mode only)
-  useEffect(() => {
-    if (step === 2 && email) {
-      import('../../services/api').then(({ default: api }) => {
-        api.get(`/dev/current-otp?email=${encodeURIComponent(email.trim())}`)
-          .then((res) => {
-            if (res.data?.success && res.data?.otp) {
-              setDevOtp(res.data.otp);
-            }
-          })
-          .catch(() => {
-            setDevOtp(null);
-          });
-      });
-    }
-  }, [step, email]);
 
   // Helper to mask email address (e.g. k********@gmail.com)
   const maskEmail = (str: string) => {
@@ -80,8 +63,10 @@ export const RegisterPage: React.FC = () => {
     try {
       const res = await sendOtp(email, password, name);
       setSuccessMsg(res.message || `We've sent a 6-digit verification code to ${maskEmail(email)}`);
-      if (res.devOtp) {
-        setDevOtp(res.devOtp);
+      if (res?.demoOtp || res?.devOtp) {
+        setDemoOtp(res.demoOtp || res.devOtp || null);
+      } else {
+        setDemoOtp(null);
       }
       setStep(2);
       setCooldown(60); // 60s resend cooldown
@@ -128,6 +113,11 @@ export const RegisterPage: React.FC = () => {
             <div className="inline-flex items-center gap-1.5 text-gold text-xs font-extrabold bg-[#471118] px-3 py-1 rounded-full border border-gold/40">
               <ShieldCheck className="w-3.5 h-3.5" /> ST Scholar Verification
             </div>
+            {demoOtp && (
+              <div className="text-[10px] uppercase tracking-widest font-extrabold bg-gold/20 text-gold px-2.5 py-1 rounded border border-gold/30 block w-fit">
+                SIH SEMIFINAL DEMO
+              </div>
+            )}
           </div>
 
           <div className="relative z-10 space-y-4 pt-8">
@@ -189,33 +179,39 @@ export const RegisterPage: React.FC = () => {
             </div>
           )}
 
-          {/* DEVELOPMENT ONLY OTP DISPLAY */}
-          {step === 2 && devOtp && (
-            <div className="p-3.5 bg-[#FFFBEB] border border-[#FCD34D] rounded-xl space-y-2 text-xs">
-              <div className="flex items-center justify-between font-bold text-[#92400E]">
-                <span className="flex items-center gap-1.5 font-bold">
-                  🔑 Development OTP
+          {/* SIH SEMIFINAL DEMO OTP DISPLAY BOX */}
+          {step === 2 && demoOtp && (
+            <div className="p-4 bg-[#FCFAF5] border border-gold/40 rounded-2xl space-y-2 text-xs shadow-xs">
+              <div className="flex items-center justify-between font-bold text-brand-dark">
+                <span className="flex items-center gap-1.5 font-extrabold text-brand-maroon">
+                  🏛️ DEMO MODE
                 </span>
-                <span className="text-[10px] bg-[#FEF3C7] text-[#92400E] px-2 py-0.5 rounded font-mono font-extrabold border border-[#FCD34D]">
-                  DEV MODE ONLY
+                <span className="text-[10px] bg-gold/20 text-brand-dark px-2.5 py-0.5 rounded font-extrabold border border-gold/40 uppercase tracking-wider">
+                  SIH SEMIFINAL DEMO
                 </span>
               </div>
-              <div className="flex items-center justify-between bg-white border border-[#FCD34D] rounded-lg px-3 py-2">
-                <span className="font-mono font-black text-xl tracking-widest text-brand-dark">
-                  {devOtp}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(devOtp);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="px-3 py-1 bg-brand-maroon hover:bg-brand-dark text-white text-xs font-bold rounded-md shadow-xs transition-colors"
-                >
-                  {copied ? 'Copied ✓' : 'Copy OTP'}
-                </button>
+              <div className="bg-white border border-border rounded-xl p-3 space-y-1">
+                <div className="text-[11px] text-muted-text font-semibold">Verification Code:</div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-mono font-black text-2xl tracking-widest text-brand-maroon">
+                    {demoOtp}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtp(demoOtp);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="px-3.5 py-1.5 bg-brand-maroon hover:bg-brand-dark text-white text-xs font-bold rounded-lg shadow-xs transition-colors shrink-0"
+                  >
+                    {copied ? 'Filled ✓' : 'Use Code'}
+                  </button>
+                </div>
               </div>
+              <p className="text-[10px] text-muted-text font-medium leading-relaxed">
+                For semifinal demonstration only. In production, this code is sent by email.
+              </p>
             </div>
           )}
 

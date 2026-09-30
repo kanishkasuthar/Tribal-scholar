@@ -16,7 +16,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   login: (email: string, password: string, role?: string) => Promise<User>;
-  sendOtp: (email: string, password: string, name: string) => Promise<{ success: boolean; message: string; devOtp?: string }>;
+  sendOtp: (email: string, password: string, name: string) => Promise<{ success: boolean; message: string; demoOtp?: string; devOtp?: string }>;
   verifyOtp: (email: string, otp: string) => Promise<User>;
   register: (email: string, password: string, name: string, role?: string) => Promise<User>;
   logout: () => void;

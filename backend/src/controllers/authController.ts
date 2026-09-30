@@ -8,7 +8,6 @@ import { AuthRequest } from '../middleware/auth';
 import { emailService } from '../services/emailService';
 
 const prisma = new PrismaClient();
-const devOtpStore = new Map<string, string>();
 
 /**
  * 1. SEND / RESEND OTP FOR EMAIL VERIFICATION
@@ -64,67 +63,9 @@ export const sendOtp = async (req: Request, res: Response) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    const authMode = (process.env.AUTH_MODE || 'development').toLowerCase();
+    const isDemoOtpMode = process.env.DEMO_OTP_MODE === 'true';
 
-    // DEVELOPMENT MODE: Store OTP locally for dev endpoint & attempt SMTP without blocking user
-    if (authMode !== 'production') {
-      devOtpStore.set(cleanEmail, generatedOtp);
-
-      console.log('\n=======================================================');
-      console.log('AUTH MODE: DEVELOPMENT');
-      console.log(`Development OTP generated for ${cleanEmail}: ${generatedOtp}`);
-      console.log(`Retrieve via GET /api/dev/current-otp?email=${cleanEmail}`);
-      console.log('=======================================================\n');
-
-      // Attempt email delivery if SMTP is configured
-      const emailSent = await emailService.sendVerificationOTP(cleanEmail, name.trim(), generatedOtp).catch(() => false);
-
-      // Upsert into EmailVerification model
-      await prisma.emailVerification.upsert({
-        where: { email: cleanEmail },
-        update: {
-          otpHash,
-          otpExpiresAt: expiresAt,
-          otpAttempts: 0,
-          otpLastSentAt: new Date(),
-          name: name.trim(),
-          passwordHash,
-        },
-        create: {
-          email: cleanEmail,
-          otpHash,
-          otpExpiresAt: expiresAt,
-          otpAttempts: 0,
-          otpLastSentAt: new Date(),
-          name: name.trim(),
-          passwordHash,
-        },
-      });
-
-      return res.status(200).json({
-        success: true,
-        message: emailSent
-          ? `Verification code sent to ${cleanEmail}`
-          : `Development mode active. Verification code generated for ${cleanEmail}`,
-        email: cleanEmail,
-        devOtp: generatedOtp,
-      });
-    }
-
-    // PRODUCTION MODE: Full 6-digit Gmail OTP verification flow
-    console.log('[OTP] Email send started for PRODUCTION OTP flow');
-    const emailSent = await emailService.sendVerificationOTP(cleanEmail, name.trim(), generatedOtp);
-
-    if (!emailSent) {
-      console.error('[OTP] EMAIL_SEND_FAILED: Email service could not send message to provider');
-      return res.status(400).json({
-        success: false,
-        message: 'Unable to send verification email',
-        emailDeliveryError: true,
-      });
-    }
-
-    // Upsert into EmailVerification model ONLY after successful email dispatch
+    // Upsert into EmailVerification model
     await prisma.emailVerification.upsert({
       where: { email: cleanEmail },
       update: {
@@ -145,6 +86,35 @@ export const sendOtp = async (req: Request, res: Response) => {
         passwordHash,
       },
     });
+
+    if (isDemoOtpMode) {
+      // SIH SEMIFINAL DEMO MODE: Return demoOtp to registration frontend
+      const domain = cleanEmail.includes('@') ? cleanEmail.split('@')[1] : 'domain';
+      console.log(`[DEMO MODE] Registration OTP generated for domain: ${domain}`);
+
+      // Attempt background email delivery if provider configured, but do not block or fail demo
+      emailService.sendVerificationOTP(cleanEmail, name.trim(), generatedOtp).catch(() => false);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Verification code generated for SIH semifinal demonstration.',
+        email: cleanEmail,
+        demoOtp: generatedOtp,
+      });
+    }
+
+    // PRODUCTION / STANDARD MODE: Send real OTP via Resend HTTPS API
+    console.log('[OTP] Email send started via Resend HTTPS API');
+    const emailSent = await emailService.sendVerificationOTP(cleanEmail, name.trim(), generatedOtp);
+
+    if (!emailSent) {
+      console.error('[OTP] EMAIL_SEND_FAILED: Email service could not send message to provider');
+      return res.status(400).json({
+        success: false,
+        message: 'Unable to send verification email. Please try again.',
+        emailDeliveryError: true,
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -253,9 +223,8 @@ export const verifyOtp = async (req: Request, res: Response) => {
       return newUser;
     });
 
-    // Cleanup verification record & dev OTP store
+    // Cleanup verification record
     await prisma.emailVerification.delete({ where: { email: cleanEmail } });
-    devOtpStore.delete(cleanEmail);
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, name: user.name },
@@ -658,46 +627,10 @@ export const verifyTransportEndpoint = async (_req: Request, res: Response) => {
 /**
  * 9. GET CURRENT PENDING DEVELOPMENT OTP (DEV ONLY - DISABLED IN PRODUCTION)
  */
-export const getCurrentDevOtp = async (req: Request, res: Response) => {
-  const authMode = (process.env.AUTH_MODE || 'development').toLowerCase();
-  if (authMode === 'production') {
-    return res.status(403).json({
-      success: false,
-      message: 'Development OTP endpoint is strictly disabled in production mode.',
-    });
-  }
-
-  let email = String(req.query.email || req.body?.email || '').toLowerCase().trim();
-  if (!email) {
-    const keys = Array.from(devOtpStore.keys());
-    if (keys.length > 0) {
-      email = keys[keys.length - 1];
-    }
-  }
-
-  if (!email || !email.includes('@')) {
-    return res.status(400).json({
-      success: false,
-      message: 'Please provide a valid pending registration email address.',
-    });
-  }
-
-  const devOtp = devOtpStore.get(email);
-  const record = await prisma.emailVerification.findUnique({ where: { email } });
-
-  if (!devOtp || !record) {
-    return res.status(404).json({
-      success: false,
-      message: `No active pending OTP found for ${email}. Please request an OTP on the registration page.`,
-    });
-  }
-
-  return res.status(200).json({
-    success: true,
-    email,
-    otp: devOtp,
-    expiresAt: record.otpExpiresAt,
-    message: 'Development OTP retrieved successfully.',
+export const getCurrentDevOtp = async (_req: Request, res: Response) => {
+  return res.status(404).json({
+    success: false,
+    message: 'Development OTP endpoint is disabled.',
   });
 };
 
