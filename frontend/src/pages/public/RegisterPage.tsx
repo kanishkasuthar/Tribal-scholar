@@ -102,7 +102,6 @@ export const RegisterPage: React.FC = () => {
     }
   };
 
-
   return (
     <div className="min-h-[85vh] bg-cream flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl w-full bg-white rounded-3xl border border-border shadow-md overflow-hidden grid grid-cols-1 md:grid-cols-12">
@@ -113,11 +112,6 @@ export const RegisterPage: React.FC = () => {
             <div className="inline-flex items-center gap-1.5 text-gold text-xs font-extrabold bg-[#471118] px-3 py-1 rounded-full border border-gold/40">
               <ShieldCheck className="w-3.5 h-3.5" /> ST Scholar Verification
             </div>
-            {demoOtp && (
-              <div className="text-[10px] uppercase tracking-widest font-extrabold bg-gold/20 text-gold px-2.5 py-1 rounded border border-gold/30 block w-fit">
-                SIH SEMIFINAL DEMO
-              </div>
-            )}
           </div>
 
           <div className="relative z-10 space-y-4 pt-8">
@@ -176,42 +170,6 @@ export const RegisterPage: React.FC = () => {
           {successMsg && (
             <div className="p-3 bg-forest/10 text-forest border border-forest/20 rounded-xl text-xs font-bold flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-forest shrink-0" /> <span>{successMsg}</span>
-            </div>
-          )}
-
-          {/* SIH SEMIFINAL DEMO OTP DISPLAY BOX */}
-          {step === 2 && demoOtp && (
-            <div className="p-4 bg-[#FCFAF5] border border-gold/40 rounded-2xl space-y-2 text-xs shadow-xs">
-              <div className="flex items-center justify-between font-bold text-brand-dark">
-                <span className="flex items-center gap-1.5 font-extrabold text-brand-maroon">
-                  🏛️ DEMO MODE
-                </span>
-                <span className="text-[10px] bg-gold/20 text-brand-dark px-2.5 py-0.5 rounded font-extrabold border border-gold/40 uppercase tracking-wider">
-                  SIH SEMIFINAL DEMO
-                </span>
-              </div>
-              <div className="bg-white border border-border rounded-xl p-3 space-y-1">
-                <div className="text-[11px] text-muted-text font-semibold">Verification Code:</div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-mono font-black text-2xl tracking-widest text-brand-maroon">
-                    {demoOtp}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtp(demoOtp);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    }}
-                    className="px-3.5 py-1.5 bg-brand-maroon hover:bg-brand-dark text-white text-xs font-bold rounded-lg shadow-xs transition-colors shrink-0"
-                  >
-                    {copied ? 'Filled ✓' : 'Use Code'}
-                  </button>
-                </div>
-              </div>
-              <p className="text-[10px] text-muted-text font-medium leading-relaxed">
-                For semifinal demonstration only. In production, this code is sent by email.
-              </p>
             </div>
           )}
 
@@ -280,50 +238,36 @@ export const RegisterPage: React.FC = () => {
           {/* STEP 2: VERIFY OTP */}
           {step === 2 && (
             <form onSubmit={handleVerifyOtp} className="space-y-5">
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-brand-dark">
-                  {demoOtp ? (
-                    <span>Your 6-digit verification code is displayed below for the <span className="text-brand-maroon font-extrabold">SIH semifinal demonstration</span>.</span>
-                  ) : (
-                    <span>We've sent a 6-digit verification code to <span className="text-brand-maroon font-extrabold">{maskEmail(email)}</span></span>
-                  )}
-                </label>
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-muted-text">
+                  {demoOtp
+                    ? 'Verification code generated for this demonstration.'
+                    : `We've sent a 6-digit verification code to ${maskEmail(email)}`}
+                </p>
               </div>
 
-              {/* SIH SEMIFINAL DEMO OTP DISPLAY BOX */}
+              {/* SINGLE CLEAN VERIFICATION CODE DISPLAY BOX */}
               {demoOtp && (
-                <div className="p-4 bg-[#FCFAF5] border border-gold/50 rounded-2xl space-y-3 text-xs shadow-xs">
-                  <div className="flex items-center justify-between font-bold text-brand-dark">
-                    <span className="flex items-center gap-1.5 font-extrabold text-brand-maroon">
-                      🏛️ DEMO MODE
+                <div className="p-3.5 bg-[#FCFAF5] border border-border rounded-xl space-y-2 text-xs">
+                  <div className="text-[11px] text-muted-text font-semibold">Verification Code</div>
+                  <div className="flex items-center justify-between gap-3 bg-white border border-border rounded-lg px-3.5 py-2">
+                    <span className="font-mono font-black text-2xl tracking-widest text-brand-maroon">
+                      {demoOtp}
                     </span>
-                    <span className="text-[10px] bg-gold/20 text-brand-dark px-2.5 py-0.5 rounded font-extrabold border border-gold/40 uppercase tracking-wider">
-                      SIH SEMIFINAL DEMO
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOtp(demoOtp);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="px-3 py-1.5 bg-brand-maroon hover:bg-brand-dark text-white text-xs font-bold rounded-md shadow-xs transition-colors shrink-0"
+                    >
+                      {copied ? 'Filled ✓' : 'Use Code'}
+                    </button>
                   </div>
-
-                  <div className="bg-white border border-border rounded-xl p-3.5 space-y-1.5">
-                    <div className="text-[11px] text-muted-text font-semibold">Verification Code:</div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-mono font-black text-3xl tracking-widest text-brand-maroon">
-                        {demoOtp}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setOtp(demoOtp);
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
-                        }}
-                        className="px-4 py-2 bg-brand-maroon hover:bg-brand-dark text-white text-xs font-extrabold rounded-lg shadow-xs transition-colors shrink-0 flex items-center gap-1.5"
-                      >
-                        {copied ? 'Filled ✓' : 'Use Code'}
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="text-[10px] text-muted-text font-medium leading-relaxed">
-                    For semifinal demonstration only. In production, this code is sent by email.
+                  <p className="text-[10px] text-muted-text font-medium">
+                    Verification code generated for this demonstration.
                   </p>
                 </div>
               )}
@@ -333,7 +277,6 @@ export const RegisterPage: React.FC = () => {
                 <input
                   type="text"
                   maxLength={6}
-
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
                   required
