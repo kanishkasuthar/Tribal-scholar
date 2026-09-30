@@ -36,9 +36,6 @@ export const Logo: React.FC<{ variant?: 'light' | 'dark'; size?: 'sm' | 'md' | '
         <span className={`font-serif font-extrabold tracking-tight ${textSizes[size]} ${isDark ? 'text-charcoal' : 'text-[#FFFDF8]'}`}>
           Tribal Scholar <span className={isDark ? 'text-terracotta' : 'text-gold'}>AI</span>
         </span>
-        <span className={`text-[10px] uppercase tracking-widest font-semibold ${isDark ? 'text-muted-text' : 'text-[#D8CFC4]'}`}>
-          SIH 2026 PROTOTYPE • AI-ENABLED SCHOLARSHIP SYSTEM
-        </span>
       </div>
     </Link>
   );
