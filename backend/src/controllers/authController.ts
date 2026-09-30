@@ -63,7 +63,7 @@ export const sendOtp = async (req: Request, res: Response) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    const isDemoOtpMode = process.env.DEMO_OTP_MODE === 'true';
+    const isDemoOtpMode = String(process.env.DEMO_OTP_MODE || '').trim().toLowerCase() === 'true' || String(process.env.DEMO_OTP_MODE || '').trim() === '1';
 
     // Upsert into EmailVerification model
     await prisma.emailVerification.upsert({
@@ -97,7 +97,7 @@ export const sendOtp = async (req: Request, res: Response) => {
 
       return res.status(200).json({
         success: true,
-        message: 'Verification code generated for SIH semifinal demonstration.',
+        message: 'Demo verification code generated for this SIH semifinal demonstration.',
         email: cleanEmail,
         demoOtp: generatedOtp,
       });

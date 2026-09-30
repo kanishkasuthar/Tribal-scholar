@@ -282,21 +282,64 @@ export const RegisterPage: React.FC = () => {
             <form onSubmit={handleVerifyOtp} className="space-y-5">
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-brand-dark">
-                  We've sent a 6-digit verification code to <span className="text-brand-maroon font-extrabold">{maskEmail(email)}</span>
+                  {demoOtp ? (
+                    <span>Your 6-digit verification code is displayed below for the <span className="text-brand-maroon font-extrabold">SIH semifinal demonstration</span>.</span>
+                  ) : (
+                    <span>We've sent a 6-digit verification code to <span className="text-brand-maroon font-extrabold">{maskEmail(email)}</span></span>
+                  )}
                 </label>
-                <div className="relative">
-                  <KeyRound className="w-4 h-4 text-muted-text absolute left-3 top-3.5" />
-                  <input
-                    type="text"
-                    maxLength={6}
+              </div>
 
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
-                    required
-                    placeholder="Enter 6-digit OTP"
-                    className="w-full bg-ivory text-center font-mono font-black text-xl tracking-widest border border-border rounded-xl pl-9 pr-4 py-2.5 text-brand-dark focus:outline-none focus:border-brand-maroon"
-                  />
+              {/* SIH SEMIFINAL DEMO OTP DISPLAY BOX */}
+              {demoOtp && (
+                <div className="p-4 bg-[#FCFAF5] border border-gold/50 rounded-2xl space-y-3 text-xs shadow-xs">
+                  <div className="flex items-center justify-between font-bold text-brand-dark">
+                    <span className="flex items-center gap-1.5 font-extrabold text-brand-maroon">
+                      🏛️ DEMO MODE
+                    </span>
+                    <span className="text-[10px] bg-gold/20 text-brand-dark px-2.5 py-0.5 rounded font-extrabold border border-gold/40 uppercase tracking-wider">
+                      SIH SEMIFINAL DEMO
+                    </span>
+                  </div>
+
+                  <div className="bg-white border border-border rounded-xl p-3.5 space-y-1.5">
+                    <div className="text-[11px] text-muted-text font-semibold">Verification Code:</div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-mono font-black text-3xl tracking-widest text-brand-maroon">
+                        {demoOtp}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOtp(demoOtp);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="px-4 py-2 bg-brand-maroon hover:bg-brand-dark text-white text-xs font-extrabold rounded-lg shadow-xs transition-colors shrink-0 flex items-center gap-1.5"
+                      >
+                        {copied ? 'Filled ✓' : 'Use Code'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-muted-text font-medium leading-relaxed">
+                    For semifinal demonstration only. In production, this code is sent by email.
+                  </p>
                 </div>
+              )}
+
+              <div className="relative">
+                <KeyRound className="w-4 h-4 text-muted-text absolute left-3 top-3.5" />
+                <input
+                  type="text"
+                  maxLength={6}
+
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                  required
+                  placeholder="Enter 6-digit OTP"
+                  className="w-full bg-ivory text-center font-mono font-black text-xl tracking-widest border border-border rounded-xl pl-9 pr-4 py-2.5 text-brand-dark focus:outline-none focus:border-brand-maroon"
+                />
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 items-center">
